@@ -1,8 +1,8 @@
-import { ActionArgs, json } from "@remix-run/cloudflare";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 
 import { Form, useActionData, useParams } from "@remix-run/react";
 
-export async function action({ request, params }: ActionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const body = await request.formData();
   const intent = body.get("intent");
   //const { intent } = await request.json<RequestDecisionBody>();
