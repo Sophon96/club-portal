@@ -1,7 +1,7 @@
 import { type LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, useLoaderData, useParams } from "@remix-run/react";
 import { formatISO } from "date-fns";
-import { User } from "lucide-react";
+import { Users } from "lucide-react";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import {
   Accordion,
@@ -126,10 +126,10 @@ export default function Club() {
 
   return (
     <>
-      <div className="w-full max-w-screen-2xl m-auto flex flex-row gap-8 mt-12">
+      <div className="mx-12 w-fit max-w-screen-2xl m-auto flex flex-row gap-8 mt-12 ">
         <div className="w-1/2">
           <img
-            src="https://source.unsplash.com/oHSzNZkGyUY"
+            src="https://images.unsplash.com/photo-1675889335685-4ac82f1e47ad"
             className="object-contain rounded-2xl"
             alt=""
           />
@@ -139,7 +139,7 @@ export default function Club() {
             {clubInfo.name}
           </h2>
           <span>
-            <User className="mr-2 h-4 w-4 inline" />
+            <Users className="mr-2 h-4 w-4 inline" />
             200 members
           </span>
           <p className="leading-7 [&:not(:first-child)]:mt-6">
@@ -147,7 +147,7 @@ export default function Club() {
           </p>
           {!user.membershipId ? (
             <Form action={`/clubs/${clubId}/members`} method="POST">
-              <Button type="submit" className="w-full mt-2">
+              <Button type="submit" className="w-full mt-6">
                 Join Club
               </Button>
             </Form>
@@ -159,6 +159,7 @@ export default function Club() {
               <Button
                 type="submit"
                 variant="destructive"
+                size="lg"
                 className="w-full mt-2"
               >
                 Leave Club
@@ -202,6 +203,7 @@ export default function Club() {
                 <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
                   Advisor
                 </h4>
+                <ul className="list-disc"><li>
                 <p className="leading-7 [&:not(:first-child)]:mt-6">
                   {clubInfo.advisor.name}
                   <a href={"mailto:" + clubInfo.advisor.email}>
@@ -210,10 +212,11 @@ export default function Club() {
                     </small>
                   </a>
                 </p>
+                </li></ul>
                 <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
                   Officers
                 </h4>
-                <ul>
+                <ul className="list-disc">
                   {clubInfo.officers.map((officer) => {
                     return (
                       <li key={officer.id}>

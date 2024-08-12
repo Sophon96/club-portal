@@ -10,8 +10,9 @@ import {
 } from "@remix-run/react";
 
 import styles from "./tailwind.css";
-import { PreventFlashOnWrongTheme, ThemeProvider } from "remix-themes";
+import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { themeSessionResolver } from "./session.server";
+import clsx from "clsx";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
@@ -33,8 +34,9 @@ export default function AppWithProviders() {
 
 export function App() {
   const data = useLoaderData<typeof loader>();
+  const [theme] = useTheme();
   return (
-    <html lang="en">
+    <html lang="en" className={clsx(theme)}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
