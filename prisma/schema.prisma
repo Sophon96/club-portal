@@ -27,17 +27,19 @@ model Club {
   founderId String @db.ObjectId
 }
 
-enum FrequencyEnum {
-  DAILY
-  WEEKLY
-  MONTHLY
+type Meeting {
+  name     String
+  location String
+  duration Int
+
+  schedule RecurrenceRuleSet
 }
 
-type Meeting {
-  location  String
-  interval  Int
-  frequency FrequencyEnum
-  startDate DateTime
+type RecurrenceRuleSet {
+  rrules  String[]
+  rdates  DateTime[]
+  exrules String[]
+  exdates DateTime[]
 }
 
 model Officer {
@@ -80,6 +82,8 @@ model Student {
   foundedClubs Club[]    @relation("FoundedClubs")
   officerRoles Officer[]
   memberships  Member[]
+
+  verified Boolean @default(false)
 }
 
 model Teacher {

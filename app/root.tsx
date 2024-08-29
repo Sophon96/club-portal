@@ -10,25 +10,41 @@ import {
 } from "@remix-run/react";
 
 import styles from "./tailwind.css";
-import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
+import {
+  PreventFlashOnWrongTheme,
+  ThemeProvider,
+  useTheme,
+} from "remix-themes";
 import { themeSessionResolver } from "./session.server";
 import clsx from "clsx";
+import { authenticator } from "./auth.server";
+import { AuthProvider } from "./components/authprovider";
+import sonnerStyles from "~/components/ui/sonner.css";
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: styles },
+  { rel: "stylesheet", href: sonnerStyles },
+];
 
 // shadcn dark mode
 // Return the theme from the session storage using the loader
 export async function loader({ request }: LoaderFunctionArgs) {
   const { getTheme } = await themeSessionResolver(request);
-  return { theme: getTheme() };
+  const user = await authenticator.isAuthenticated(request);
+  return { theme: getTheme(), user };
 }
 
 export default function AppWithProviders() {
   const data = useLoaderData<typeof loader>();
   return (
-    <ThemeProvider specifiedTheme={data.theme} themeAction="/action/set-theme">
-      <App />
-    </ThemeProvider>
+    <AuthProvider user={data.user}>
+      <ThemeProvider
+        specifiedTheme={data.theme}
+        themeAction="/action/set-theme"
+      >
+        <App />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

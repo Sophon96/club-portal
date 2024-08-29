@@ -1,16 +1,18 @@
-import { PrismaClient, FrequencyEnum } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import {
   rand,
   randCompanyName,
+  randFullName,
   randFutureDate,
   randJobTitle,
   randNumber,
-  randPastDate,
-  randProductDescription,
+  randParagraph,
+  randSkill,
+  randSoonDate,
   randUser,
   toCollection,
 } from "@ngneat/falso";
-import assert from "assert";
+import RRule from "rrule";
 
 /*const clubs = [
   {
@@ -2653,294 +2655,461 @@ import assert from "assert";
 // FIXME: ensure that club names, student emails, and teacher names are unique.
 // though you will probably still get enough random data that you won't need to fix this
 var seenClubNames = new Set();
-const getClubName = async () => {
+const getClubName = () => {
+  console.log(seenClubNames);
   let clubName = randCompanyName();
-  while (await prisma.club.findUnique({where: {name: clubName}}))
-    clubName = randCompanyName();
-  seenClubNames.add(clubName)
-  return clubName
-}
+  while (seenClubNames.has(clubName)) clubName = randCompanyName();
+  seenClubNames.add(clubName);
+  return clubName;
+};
 
-const fakeClubs = toCollection(
-  () => {
-    let advisor = randUser();
-    let founder = randUser();
+const getRRuleString = () => {
+  return new RRule.RRule({
+    freq: rand([
+      RRule.RRule.DAILY,
+      RRule.RRule.WEEKLY,
+      RRule.RRule.MONTHLY,
+      RRule.RRule.YEARLY,
+    ]),
+    dtstart: randSoonDate({ days: 7 }),
+    interval: randNumber({ min: 1, max: 5 }),
+  }).toString();
+};
 
-    return {
-      name: randCompanyName(),
-      description: randProductDescription(),
-      advisor: {
-        create: {
-          name: `${advisor.firstName} ${advisor.lastName}`,
-          email: advisor.email,
-        },
-      },
-      meetings: toCollection(
-        () => {
-          return {
-            location: `${rand(["S", "N", "P", "L"])}-${randNumber({
-              min: 1,
-              max: 25,
-            })}`,
-            interval: randNumber({ min: 1, max: 3 }),
-            frequency: rand([
-              FrequencyEnum.DAILY,
-              FrequencyEnum.WEEKLY,
-              FrequencyEnum.MONTHLY,
-            ]),
-            startDate: randFutureDate(),
-          };
-        },
-        { length: randNumber({ min: 1, max: 5 }) }
-      ),
-      founder: {
-        create: {
-          name: `${founder.firstName} ${founder.lastName}`,
-          email: founder.email,
-          graduation: randPastDate(),
-        },
-      },
-      officers: {
-        create: toCollection(
-          () => {
-            let officer = randUser();
+const ensureArray = <T>(maybeArray: T | T[]) =>
+  Array.isArray(maybeArray) ? maybeArray : [maybeArray];
 
-            return {
-              role: randJobTitle(),
-              student: {
-                create: {
-                  name: `${officer.firstName} ${officer.lastName}`,
-                  email: officer.email,
-                  graduation: randFutureDate(),
-                },
-              },
-            };
-          },
-          { length: randNumber({ min: 2, max: 10 }) }
-        ),
-      },
-      members: {
-        create: toCollection(
-          () => {
-            let student = randUser();
+// const students = [
+//   {
+//     name: "Pomu Rainpuff",
+//     email: "prainpuff@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Elira Pendora",
+//     email: "ependora@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Finana Ryugu",
+//     email: "fryugu@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Rosemi Lovelock",
+//     email: "rlovelock@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Petra Gurin",
+//     email: "pgurin@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Selen Tatsuki",
+//     email: "statsuki@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Nina Kosaka",
+//     email: "nkosaka@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Enna Alouette",
+//     email: "ealouette@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Millie Parfait",
+//     email: "mparfait@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Reimu Endou",
+//     email: "rendou@2434en.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Mysta Rias",
+//     email: "mrias@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Luca Kaneshiro",
+//     email: "lkaneshiro@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Shu Yamino",
+//     email: "syamino@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Ike Eveland",
+//     email: "ieveland@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Vox Akuma",
+//     email: "vakuma@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Yugo Asuma",
+//     email: "yasuma@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Uki Violeta",
+//     email: "uvioleta@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Alban Knox",
+//     email: "aknox@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Fulgur Ovid",
+//     email: "fovid@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Sonny Brisko",
+//     email: "sbrisko@2434en.com",
+//     graduation: new Date("2024-07"),
+//   },
+//   {
+//     name: "Ren Zotto",
+//     email: "rzotto@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Maria Marionette",
+//     email: "mmarionette@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Kyo Kaneko",
+//     email: "kkaneko@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Scarle Yonaguni",
+//     email: "syonaguni@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Aster Arcadia",
+//     email: "aarcadia@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Ver Vermillion",
+//     email: "vvermillion@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Doppio Dropscythe",
+//     email: "ddropscythe@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Meloco Kyoran",
+//     email: "mkioran@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Kotoka Torahime",
+//     email: "ktorahime@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Hex Haywire",
+//     email: "hhaywire@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Zaion LanZa",
+//     email: "zlanza@2434en.com",
+//     graduation: new Date("2025-07"),
+//   },
+//   {
+//     name: "Vezalius Bandage",
+//     email: "vbandage@2434en.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Vantacrow Bringer",
+//     email: "vbringer@2434en.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Yu Q. Wilson",
+//     email: "ywilson@2434en.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   // Didn't realize I only had 34 students in here, but now I do because
+//   // I set the upper bound on generated members to 60 for some reason
+//   {
+//     name: "Victoria Brightshield",
+//     email: "vbrightshield@2434en.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Claude Clawmark",
+//     email: "cclawmark@2434en.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Kunai Nakasato",
+//     email: "knakasato@2434en.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Twisty Amanazako",
+//     email: "tamanazako@2434en.com",
+//     graduation: new Date("2027-07"),
+//   },
+//   {
+//     name: "Ryoma Barrenwort",
+//     email: "rbarrenwort@2434en.com",
+//     graduation: new Date("2027-07"),
+//   },
+//   {
+//     name: "Klara Charmwood",
+//     email: "kcharmwood@2434en.com",
+//     graduation: new Date("2027-07"),
+//   },
+//   {
+//     name: "Ceres Fauna",
+//     email: "cfauna@holoen.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Ouro Kronii",
+//     email: "okronii@holoen.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Hakos Baelz",
+//     email: "hbaelz@holoen.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Nanashi Mumei",
+//     email: "nmumei@holoen.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Tsukumo Sana",
+//     email: "tsana@holoen.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "IRyS",
+//     email: "irys@holoen.com",
+//     graduation: new Date("2023-07"),
+//   },
+//   {
+//     name: "Nerissa Ravencroft",
+//     email: "nravencroft@holoen.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Koseki Bijou",
+//     email: "kbijoo@holoen.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Novella Shiori",
+//     email: "nshiori@holoen.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Fuwawa Abyssgard",
+//     email: "fabyssgard@holoen.com",
+//     graduation: new Date("2026-07"),
+//   },
+//   {
+//     name: "Mococo Abyssgard",
+//     email: "mabyssgard@holoen.com",
+//     graduation: new Date("2026-07"),
+//   },
+// ];
 
-            return {
-              student: {
-                create: {
-                  name: `${student.firstName} ${student.lastName}`,
-                  email: student.email,
-                  graduation: randFutureDate(),
-                },
-              },
-            };
-          },
-          { length: randNumber({ min: 3, max: 60 }) }
-        ),
-      },
-    };
-  },
-  { length: 30 }
+// const teachers = [
+//   {
+//     name: "Gawr Gura",
+//     email: "ggura@holoen.net",
+//   },
+//   {
+//     name: "Calliope Mori",
+//     email: "cmori@holoen.net",
+//   },
+//   {
+//     name: "Amelia Watson",
+//     email: "awatson@holoen.net",
+//   },
+//   {
+//     name: "Ninomae Ina'nis",
+//     email: "ninanis@holoen.net",
+//   },
+//   {
+//     name: "Takanashi Kiara",
+//     email: "tkiara@holoen.net",
+//   },
+// ];
+
+const students = ensureArray(
+  toCollection(
+    () => {
+      const person = randUser();
+      return {
+        email: person.email,
+        name: `${person.firstName} ${person.lastName}`,
+        graduation: new Date(randNumber({ min: 2023, max: 2027 }), 7),
+      };
+    },
+    { length: 60 }
+  )
 );
 
-const students = [
-  {
-    name: "Pomu Rainpuff",
-    email: "prainpuff@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Elira Pendora",
-    email: "ependora@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Finana Ryugu",
-    email: "fryugu@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Rosemi Lovelock",
-    email: "rlovelock@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Petra Gurin",
-    email: "pgurin@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Selen Tatsuki",
-    email: "statsuki@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Nina Kosaka",
-    email: "nkosaka@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Enna Alouette",
-    email: "ealouette@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Millie Parfait",
-    email: "mparfait@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Reimu Endou",
-    email: "rendou@2434en.com",
-    graduation: new Date("2023-07"),
-  },
-  {
-    name: "Mysta Rias",
-    email: "mrias@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Luca Kaneshiro",
-    email: "lkaneshiro@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Shu Yamino",
-    email: "syamino@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Ike Eveland",
-    email: "ieveland@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Vox Akuma",
-    email: "vakuma@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Yugo Asuma",
-    email: "yasuma@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Uki Violeta",
-    email: "uvioleta@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Alban Knox",
-    email: "aknox@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Fulgur Ovid",
-    email: "fovid@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Sonny Brisko",
-    email: "sbrisko@2434en.com",
-    graduation: new Date("2024-07"),
-  },
-  {
-    name: "Ren Zotto",
-    email: "rzotto@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Maria Marionette",
-    email: "mmarionette@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Kyo Kaneko",
-    email: "kkaneko@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Scarle Yonaguni",
-    email: "syonaguni@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Aster Arcadia",
-    email: "aarcadia@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Ver Vermillion",
-    email: "vvermillion@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Doppio Dropscythe",
-    email: "ddropscythe@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Meloco Kyoran",
-    email: "mkioran@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Kotoka Torahime",
-    email: "ktorahime@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Hex Haywire",
-    email: "hhaywire@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Zaion LanZa",
-    email: "zlanza@2434en.com",
-    graduation: new Date("2025-07"),
-  },
-  {
-    name: "Vezalius Bandage",
-    email: "vbandage@2434en.com",
-    graduation: new Date("2026-07"),
-  },
-  {
-    name: "Vantacrow Bringer",
-    email: "vbringer@2434en.com",
-    graduation: new Date("2026-07"),
-  },
-  {
-    name: "Yu Q. Wilson",
-    email: "ywilson@2434en.com",
-    graduation: new Date("2026-07"),
-  },
-];
+const teachers = ensureArray(
+  toCollection(
+    () => {
+      const person = randUser();
+      return {
+        email: person.email,
+        name: `${person.firstName} ${person.lastName}`,
+        // graduation: new Date(randNumber({ min: 2023, max: 2027 }), 7),
+      };
+    },
+    { length: 10 }
+  )
+);
 
-const teachers = [
-  {
-    name: "Gawr Gura",
-    email: "ggura@holoen.net",
-  },
-  {
-    name: "Calliope Mori",
-    email: "cmori@holoen.net",
-  },
-  {
-    name: "Amelia Watson",
-    email: "awatson@holoen.net",
-  },
-  {
-    name: "Ninomae Ina'nis",
-    email: "ninanis@holoen.net",
-  },
-  {
-    name: "Takanashi Kiara",
-    email: "tkiara@holoen.net",
-  },
-];
+const fakeClubsGen = () =>
+  ensureArray(
+    toCollection(
+      () => {
+        let advisor = rand(teachers);
+        let founder = rand(students);
+
+        const seenOfficers = new Set();
+        const seenMembers = new Set(); // this is here mostly because I didn't want to figure out how to do this properly
+
+        return {
+          name: getClubName(),
+          description: randParagraph(),
+          advisor: {
+            connect: {
+              // name: `${advisor.firstName} ${advisor.lastName}`,
+              email: advisor.email,
+            },
+          },
+          meetings: toCollection(
+            () => {
+              return {
+                name: randSkill(),
+                location: `${rand(["S", "N", "P", "L"])}-${randNumber({
+                  min: 1,
+                  max: 25,
+                })}`,
+                duration: randNumber({ min: 1800, max: 3600 * 8 }),
+                schedule: {
+                  rrules: ensureArray(
+                    toCollection(() => getRRuleString(), {
+                      length: randNumber({ min: 1, max: 5 }),
+                    })
+                  ),
+                  rdates: randFutureDate({
+                    length: randNumber({ min: 1, max: 5 }),
+                  }),
+                  exrules: ensureArray(
+                    toCollection(() => getRRuleString(), {
+                      length: randNumber({ min: 1, max: 5 }),
+                    })
+                  ),
+                  exdates: randFutureDate({
+                    length: randNumber({ min: 1, max: 5 }),
+                  }),
+                },
+              };
+            },
+            { length: randNumber({ min: 1, max: 5 }) }
+          ),
+          founder: {
+            connect: {
+              // name: `${founder.firstName} ${founder.lastName}`,
+              email: founder.email,
+              // graduation: randPastDate(),
+            },
+          },
+          officers: {
+            create: toCollection(
+              () => {
+                let officer = rand(students);
+                let role = randJobTitle();
+
+                while (seenOfficers.has(`${officer.email}-${role}`)) {
+                  officer = rand(students);
+                  role = randJobTitle();
+                }
+                seenOfficers.add(`${officer.email}-${role}`);
+
+                return {
+                  role: randJobTitle(),
+                  student: {
+                    connect: {
+                      // name: `${officer.firstName} ${officer.lastName}`,
+                      email: officer.email,
+                      // graduation: randFutureDate(),
+                    },
+                  },
+                };
+              },
+              { length: randNumber({ min: 2, max: 10 }) }
+            ),
+          },
+          members: {
+            create: toCollection(
+              () => {
+                let student = rand(students);
+
+                while (seenMembers.has(student.email)) student = rand(students);
+                seenMembers.add(student.email);
+
+                return {
+                  student: {
+                    connect: {
+                      // name: `${student.firstName} ${student.lastName}`,
+                      email: student.email,
+                      // graduation: randFutureDate(),
+                    },
+                  },
+                };
+              },
+              { length: randNumber({ min: 3, max: 30 }) }
+            ),
+          },
+        };
+      },
+      { length: 30 }
+    )
+  );
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // Add club names that are already in database to seen club names set
+  (
+    await prisma.club
+      .findMany({ select: { name: true } })
+      .then((val) => val.map((v) => v.name))
+  ).map((v) => seenClubNames.add(v));
+
   for (const student of students) {
     await prisma.student.upsert({
       where: { email: student.email },
@@ -2957,7 +3126,7 @@ async function main() {
     });
   }
 
-  assert(Array.isArray(fakeClubs))
+  const fakeClubs = fakeClubsGen();
   for (const fakeClub of fakeClubs) {
     await prisma.club.create({
       data: fakeClub,

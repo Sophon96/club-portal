@@ -5,10 +5,22 @@ import invariant from "tiny-invariant";
 import { type Prisma } from "@prisma/client";
 import { prisma } from "./db.server";
 
-export interface AuthInfo {
-  type: "student" | "teacher" | "admin";
+export interface StudentAuthInfo {
+  type: "student";
   email: string;
 }
+
+export interface AuthInfoTeacher {
+  type: "teacher";
+  email: string;
+}
+
+export interface AuthInfoAdmin {
+  type: "admin";
+  email: string;
+}
+
+export type AuthInfo = StudentAuthInfo | AuthInfoTeacher | AuthInfoAdmin;
 
 export let authenticator = new Authenticator<AuthInfo>(authSessionStorage);
 
@@ -22,7 +34,7 @@ authenticator
         hd: "djusdstudents.org",
       },
       async ({ profile }) => {
-        if (!process.env.DONT_CHECK_DOMAIN!) {
+        if (process.env.DONT_CHECK_DOMAIN !== "true") {
           invariant(
             profile.emails[0].value.endsWith("@djusdstudents.org"),
             "Student email is not on djusdstudents.org"
@@ -45,7 +57,7 @@ authenticator
         hd: "djusd.net",
       },
       async ({ profile }) => {
-        if (!process.env.DONT_CHECK_DOMAIN!) {
+        if (process.env.DONT_CHECK_DOMAIN !== "true") {
           invariant(
             profile.emails[0].value.endsWith("@djusd.net"),
             "Teacher email is not on djusd.net"

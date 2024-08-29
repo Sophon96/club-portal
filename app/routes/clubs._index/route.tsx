@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
+import invariant from "tiny-invariant";
 import {
   Card,
   CardDescription,
@@ -50,11 +51,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // console.log(clubInfos);
     return json(
       clubInfos.map((e) => {
+        invariant(
+          e._id,
+          "_id does not exist on returned club from fuzzy search"
+        );
+        invariant(e._id.$oid, "No ObjectID on returned club from fuzzy search");
+
         return {
           id: e._id.$oid,
           name: e.name,
           description: e.description,
-        };
+        } as { id: string; name: string; description: string };
       })
     );
   }
@@ -67,7 +74,7 @@ export default function Club() {
   return (
     <>
       <div className="w-screen bg-blue-600 h-96 mb-8">
-        <div className="w-1/3 m-auto flex flex-col justify-center items-center">
+        <div className="md:w-1/2  max-md:mx-4 m-auto flex flex-col justify-center items-center">
           <h1 className="scroll-m-20 text-4xl text-white font-extrabold tracking-tight lg:text-5xl mb-12 mt-24">
             Clubs Catalog
           </h1>
@@ -82,7 +89,7 @@ export default function Club() {
         </div>
       </div>
       <div className="flex flex-wrap shrink-0 justify-center items-center gap-4 max-w-7xl m-auto">
-        <Card className="w-96 h-60 overflow-hidden">
+        {/* <Card className="w-96 h-60 overflow-hidden">
           <img
             className="w-full h-24 object-cover"
             src="https://images.unsplash.com/photo-1682687221175-fd40bbafe6ca"
@@ -95,7 +102,7 @@ export default function Club() {
               kina chape ape kara kina myohontuske clap waipa
             </CardDescription>
           </CardHeader>
-        </Card>
+        </Card> */}
         {clubInfos.map((club) => {
           const idAsNum = parseInt(club.id, 16);
           // Every tailwindcss color
@@ -129,16 +136,17 @@ export default function Club() {
               to={`/clubs/${club.id}`}
               className="w-full max-w-sm h-60"
             >
-              <Card className="h-full overflow-hidden">
-                <div
+              <Card className="overflow-hidden min-h-0 h-full flex flex-col">
+                {/* <div
                   className={cn(
-                    "w-full h-24",
+                    "w-full sm:mx-0 h-24 flex-shrink-0",
                     colorClassNames[idAsNum % colorClassNames.length]
                   )}
-                />
-                <CardHeader>
+                /> */}
+                <img className="w-full sm:mx-0 h-24 flex-shrink-0 object-contain" src={`https://picsum.photos/seed/${club.id}/400/100`} />
+                <CardHeader className="min-h-0 flex-grow flex flex-col">
                   <CardTitle>{club.name}</CardTitle>
-                  <CardDescription className="overflow-hidden text-ellipsis">
+                  <CardDescription className="overflow-hidden text-ellipsis flex-grow">
                     {club.description}
                   </CardDescription>
                 </CardHeader>

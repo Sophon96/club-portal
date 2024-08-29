@@ -23,7 +23,7 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
         <div>
           <ul className="flex m-0 p-0 gap-x-4">
             <li>
-              <Link to="/clubs">Catalog</Link>
+              <Link to="/clubs"><Button variant="link">Catalog</Button></Link>
             </li>
           </ul>
         </div>
@@ -36,7 +36,7 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
             <li>
               {props.user ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild>
                     <Button variant="ghost">
                       <User className="mr-2 inline" />
                       {props.user.email}
