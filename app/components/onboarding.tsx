@@ -42,8 +42,6 @@ export function Onboarding({ studentExists }: OnboardingProps) {
     }
   }, [dialogOpen, onboardingComplete]);
 
-  if (studentExists) return;
-
   if (
     fetcher.state === "idle" &&
     fetcher.data &&
@@ -69,6 +67,8 @@ export function Onboarding({ studentExists }: OnboardingProps) {
     }
   }
 
+  if (studentExists) return;
+
   return (
     <>
       <Dialog
@@ -79,7 +79,7 @@ export function Onboarding({ studentExists }: OnboardingProps) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Welcome to Clubz!</DialogTitle>
+            <DialogTitle>Welcome to the DSHS Clubs platform!</DialogTitle>
             <DialogDescription>
               Fill in the following information to complete onboarding.
             </DialogDescription>

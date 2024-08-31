@@ -16,7 +16,7 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
       <nav className="flex justify-between items-center p-4">
         <div>
           <Link to="/" className="text-2xl font-extrabold">
-            Clubz
+            DSHS Clubs
           </Link>
         </div>
 
