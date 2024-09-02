@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Form, Link, useSubmit } from "@remix-run/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,8 @@ import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 
 export function ClubsNavbar(props: { user: AuthInfo | null }) {
+  const submit = useSubmit();
+
   return (
     <>
       <nav className="flex justify-between items-center p-4">
@@ -23,7 +25,9 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
         <div>
           <ul className="flex m-0 p-0 gap-x-4">
             <li>
-              <Link to="/clubs"><Button variant="link">Catalog</Button></Link>
+              <Link to="/clubs">
+                <Button variant="link">Catalog</Button>
+              </Link>
             </li>
           </ul>
         </div>
@@ -43,10 +47,21 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <Link to="/logout">Log out</Link>
-                    </DropdownMenuItem>
+                    <Form action="/logout" method="POST">
+                      {/* <button type="submit"> */}
+                      {/* <Button type="submit" asChild> */}
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          submit(
+                            e.currentTarget.parentElement as HTMLFormElement
+                          );
+                        }}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" /> Log out
+                      </DropdownMenuItem>
+                      {/* </Button> */}
+                      {/* </button> */}
+                    </Form>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (

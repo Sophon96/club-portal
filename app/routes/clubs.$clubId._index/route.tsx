@@ -1,6 +1,7 @@
 import {
   ActionFunctionArgs,
   type LoaderFunctionArgs,
+  MetaFunction,
   json,
 } from "@remix-run/node";
 import {
@@ -11,7 +12,7 @@ import {
   useParams,
 } from "@remix-run/react";
 import { formatISO } from "date-fns";
-import { User, Users } from "lucide-react";
+import { ImageOff, User, Users } from "lucide-react";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import {
   Accordion,
@@ -31,7 +32,7 @@ import {
 import { prisma } from "~/db.server";
 import { formatDuration, isValidObjectId } from "~/lib/utils";
 import { assembleRRuleSet, formatRRule } from "~/rrule";
-import { Large, P, Small, UL } from "~/components/ui/typography";
+import { H1, Large, P, Small, UL } from "~/components/ui/typography";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import {
@@ -41,6 +42,20 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "~/components/ui/carousel";
+import { getPresignedUrl, s3Client } from "~/s3.server";
+import { ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { Card, CardContent } from "~/components/ui/card";
+import { ImageGallery } from "./image-gallery";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  const preloadTags = data
+    ? data.galleryImageUrls.map((url) => {
+        return { tagName: "link", rel: "preload", href: url, as: "image" };
+      })
+    : [];
+
+  return [{ title: `${data?.club.name} | DSHS Clubs` }, ...preloadTags];
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Ensure that the ID passed in the path is valid
@@ -147,9 +162,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   });
 
+  // Get gallery images from S3
+  const galleryObjects = await s3Client.send(
+    new ListObjectsV2Command({
+      Bucket: process.env.S3_BUCKET,
+      Prefix: `${club.id}/gallery/`,
+    })
+  );
+
+  let galleryImageUrls: (string | null)[];
+  if (typeof galleryObjects.Contents === "undefined") {
+    console.error("No contents returned for gallery images");
+    galleryImageUrls = [];
+  } else {
+    galleryImageUrls = await Promise.all(
+      galleryObjects.Contents.map((obj) => {
+        if (obj.Key) {
+          return getPresignedUrl(obj.Key);
+        } else {
+          console.error("No key returned for gallery image");
+          return null;
+        }
+      })
+    );
+  }
+
   return json({
     club: { ...club, meetings: meetingsWithStringDates, numMembers },
     user: { ...user, membershipId },
+    galleryImageUrls,
   });
 }
 
@@ -229,7 +270,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function Club() {
   const params = useParams();
   const clubId = params.clubId;
-  const { club, user } = useLoaderData<typeof loader>();
+  const { club, user, galleryImageUrls } = useLoaderData<typeof loader>();
   const meetings = club.meetings.map((mtg) => {
     // Remember when we turned the dates into strings in the loader?
     // Time to turn them back into Date objects.
@@ -280,28 +321,8 @@ export default function Club() {
 
   return (
     <>
-      <div className="px-4 lg:px-8 w-fit max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-8 mt-4 lg:mt-12 ">
-        {/* <div className="lg:w-1/2">
-          <img
-            src="https://images.unsplash.com/photo-1675889335685-4ac82f1e47ad"
-            className="object-contain rounded-2xl"
-            alt=""
-          />
-        </div> */}
-        <Carousel className="lg:w-1/2">
-          <CarouselContent>
-            {Array.from({ length: 5 }).map((_, idx) => (
-              <CarouselItem key={idx}>
-                <img
-                  src={`https://picsum.photos/seed/${club.id}-${idx}/4000/3000`}
-                  className="rounded-2xl"
-                />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="left-4 opacity-50 hover:opacity-100" />
-          <CarouselNext className="right-4 opacity-50 hover:opacity-100" />
-        </Carousel>
+      <div className="px-4 lg:px-8 w-full max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-8 mt-4 lg:mt-12 ">
+        <ImageGallery galleryImageUrls={galleryImageUrls} />
         <div className="lg:w-1/2">
           <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
             {club.name}

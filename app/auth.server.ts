@@ -7,16 +7,19 @@ import { prisma } from "./db.server";
 
 export interface StudentAuthInfo {
   type: "student";
+  name: string;
   email: string;
 }
 
 export interface AuthInfoTeacher {
   type: "teacher";
+  name: string;
   email: string;
 }
 
 export interface AuthInfoAdmin {
   type: "admin";
+  name: string;
   email: string;
 }
 
@@ -40,8 +43,17 @@ authenticator
             "Student email is not on djusdstudents.org"
           );
         }
+
+        // const student = await prisma.student.findUnique({
+        //   where: { email: profile.emails[0].value },
+        // });
+
+        // console.log(profile);
+
         return {
           type: "student",
+          name: `${profile.name.givenName} ${profile.name.familyName}`,
+          // student,
           email: profile.emails[0].value,
         };
       }
@@ -63,8 +75,15 @@ authenticator
             "Teacher email is not on djusd.net"
           );
         }
+
+        // const teacher = await prisma.teacher.findUnique({
+        //   where: { email: profile.emails[0].value },
+        // });
+
         return {
           type: "teacher",
+          name: `${profile.name.givenName} ${profile.name.familyName}`,
+          // teacher,
           email: profile.emails[0].value,
         };
       }

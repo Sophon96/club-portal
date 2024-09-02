@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, MetaFunction, type LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSearchParams } from "@remix-run/react";
 import invariant from "tiny-invariant";
+import { z } from "zod";
 import {
   Card,
   CardDescription,
@@ -12,22 +13,66 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { prisma } from "~/db.server";
 import { cn } from "~/lib/utils";
+import { getPresignedUrl } from "~/s3.server";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  const preloadS3Links = data
+    ? data
+        .filter((club) => club.bannerUrl)
+        .map((club) => {
+          return {
+            tagName: "link",
+            rel: "preload",
+            href: club.bannerUrl,
+            as: "image",
+          };
+        })
+    : [];
+
+  return [{ title: "Catalog | DSHS Clubs" }, ...preloadS3Links];
+};
+
+const clubInfoSchema = z
+  .object({
+    _id: z.object({ $oid: z.string() }),
+    name: z.string(),
+    description: z.string(),
+    bannerImage: z.boolean(),
+  })
+  .transform(({ name, description, bannerImage, _id }) => {
+    return { name, description, bannerImage, id: _id.$oid };
+  });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q");
 
   if (!query) {
-    const clubInfos = await prisma.club.findMany({
-      select: {
-        id: true,
-        name: true,
-        description: true,
-      },
-    });
+    const clubInfos = await prisma.club
+      .findMany({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          bannerImage: true,
+        },
+      })
+      .then((clubs) =>
+        Promise.all(
+          clubs.map(async (club) => {
+            let bannerUrl = null;
+            if (club.bannerImage) {
+              bannerUrl = await getPresignedUrl(`${club.id}/banner.webp`);
+            }
+            const { bannerImage, ...clubWithoutBannerImage } = club;
+            return { ...clubWithoutBannerImage, bannerUrl };
+          })
+        )
+      );
+
     return json(clubInfos);
   } else {
-    const clubInfos = (await prisma.club.aggregateRaw({
+    const clubInfos = await prisma.club.aggregateRaw({
       pipeline: [
         {
           $search: {
@@ -43,26 +88,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           $project: {
             name: 1,
             description: 1,
+            bannerImage: 1,
           },
         },
       ],
-    })) as unknown as Prisma.JsonObject[]; // FIXME: Pretty sure Prisma has the wrong type
+    }); /*  as unknown as Prisma.JsonObject[] */ // FIXME: Pretty sure Prisma has the wrong type
     // console.log(typeof clubInfos);
     // console.log(clubInfos);
-    return json(
-      clubInfos.map((e) => {
-        invariant(
-          e._id,
-          "_id does not exist on returned club from fuzzy search"
-        );
-        invariant(e._id.$oid, "No ObjectID on returned club from fuzzy search");
+    const parsedClubInfos = z.array(clubInfoSchema).safeParse(clubInfos);
+    if (!parsedClubInfos.success) {
+      throw new Response(null, { status: 500 });
+    }
 
-        return {
-          id: e._id.$oid,
-          name: e.name,
-          description: e.description,
-        } as { id: string; name: string; description: string };
-      })
+    return json(
+      await Promise.all(
+        parsedClubInfos.data.map(async (club) => {
+          let bannerUrl = null;
+          if (club.bannerImage) {
+            bannerUrl = await getPresignedUrl(`${club.id}/banner.webp`);
+          }
+          const { bannerImage, ...clubWithoutBannerImage } = club;
+          return { ...clubWithoutBannerImage, bannerUrl };
+        })
+      )
     );
   }
 }
@@ -137,13 +185,19 @@ export default function Club() {
               className="w-full max-w-sm h-60"
             >
               <Card className="overflow-hidden min-h-0 h-full flex flex-col">
-                {/* <div
-                  className={cn(
-                    "w-full sm:mx-0 h-24 flex-shrink-0",
-                    colorClassNames[idAsNum % colorClassNames.length]
-                  )}
-                /> */}
-                <img className="w-full sm:mx-0 h-24 flex-shrink-0 object-contain" src={`https://picsum.photos/seed/${club.id}/400/100`} />
+                {club.bannerUrl ? (
+                  <img
+                    className="w-full sm:mx-0 h-24 flex-shrink-0 object-cover"
+                    src={club.bannerUrl}
+                  />
+                ) : (
+                  <div
+                    className={cn(
+                      "w-full sm:mx-0 h-24 flex-shrink-0",
+                      colorClassNames[idAsNum % colorClassNames.length]
+                    )}
+                  />
+                )}
                 <CardHeader className="min-h-0 flex-grow flex flex-col">
                   <CardTitle>{club.name}</CardTitle>
                   <CardDescription className="overflow-hidden text-ellipsis flex-grow">

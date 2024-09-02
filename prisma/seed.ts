@@ -13,6 +13,12 @@ import {
   toCollection,
 } from "@ngneat/falso";
 import RRule from "rrule";
+import {
+  PutObjectCommand,
+  PutObjectCommandOutput,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { buffer } from "node:stream/consumers";
 
 /*const clubs = [
   {
@@ -2656,7 +2662,7 @@ import RRule from "rrule";
 // though you will probably still get enough random data that you won't need to fix this
 var seenClubNames = new Set();
 const getClubName = () => {
-  console.log(seenClubNames);
+  // console.log(seenClubNames);
   let clubName = randCompanyName();
   while (seenClubNames.has(clubName)) clubName = randCompanyName();
   seenClubNames.add(clubName);
@@ -3102,6 +3108,140 @@ const fakeClubsGen = () =>
 
 const prisma = new PrismaClient();
 
+async function seedS3(clubs: { id: string }[]) {
+  const s3Client = new S3Client({
+    region: process.env.S3_REGION,
+    endpoint: process.env.S3_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY!,
+      secretAccessKey: process.env.S3_SECRET_KEY!,
+    },
+    forcePathStyle: true,
+  });
+
+  await Promise.all(
+    clubs.map(async (val, idx) => {
+      // Add gallery images
+      const galleryImages = await Promise.all(
+        Array.from(
+          { length: randNumber({ min: 3, max: 10 }) },
+          (_, galleryIdx) =>
+            fetch(
+              `https://picsum.photos/seed/${val.id}-gallery${galleryIdx}/1600/1200.webp`
+            )
+              .then(async (resp) =>
+                resp.ok && resp.body
+                  ? resp
+                  : await new Promise<Response>((resolve) =>
+                      setTimeout(() => {
+                        resolve(
+                          fetch(
+                            `https://picsum.photos/seed/${val.id}-gallery${galleryIdx}/1600/900.webp`
+                          )
+                        );
+                      }, 10000)
+                    )
+              )
+              .catch((err) => {
+                console.error(`Failed to fetch gallery image`, err);
+                console.log("Trying again...");
+                return new Promise<Response>((resolve) =>
+                  setTimeout(() => {
+                    resolve(
+                      fetch(
+                        `https://picsum.photos/seed/${val.id}-gallery${galleryIdx}/1600/900.webp`
+                      )
+                    );
+                  }, 10000)
+                );
+              })
+        )
+      );
+
+      Promise.all(
+        galleryImages.map(async (response, respIdx) => {
+          return response.ok && response.body
+            ? await s3Client.send(
+                new PutObjectCommand({
+                  Bucket: process.env.S3_BUCKET,
+                  Key: `${val.id}/gallery/${respIdx}.webp`,
+                  Body: new Uint8Array(await response.arrayBuffer()),
+                  ContentType: "image/webp",
+                })
+              )
+            : response;
+        })
+      ).then(
+        (success) =>
+          success.map((successOutput, successIdx) =>
+            !(successOutput instanceof Response)
+              ? console.log(
+                  `Uploaded gallery image for club ${val.id} idx ${successIdx}: ETag ${successOutput.ETag}`
+                )
+              : console.error(
+                  `Didn't upload gallery image for club ${val.id} idx ${successIdx} because of bad response from image API: status ${successOutput.status}`
+                )
+          ),
+        (err) => {
+          console.error(
+            `Failed to upload gallery image for club ${val.id} because of error`,
+            err
+          );
+        }
+      );
+
+      // Add banner image to half of the clubs
+      if (idx % 2) return;
+
+      const bannerImage = await fetch(
+        `https://picsum.photos/seed/${val.id}-banner/512/128.webp`
+      );
+      if (!bannerImage.ok) {
+        console.error(
+          `Failed to fetch banner image! status: ${bannerImage.status}; id: ${val.id}`
+        );
+        return;
+      }
+
+      if (!bannerImage.body) {
+        console.error(`Banner image body was empty! id: ${val.id}`);
+        return;
+      }
+
+      const consumedBody = await bannerImage
+        .arrayBuffer()
+        .then((val) => new Uint8Array(val));
+
+      // DEBUG: saasdf
+      console.log("Got image blob");
+
+      const uploadParams = {
+        Bucket: process.env.S3_BUCKET,
+        Key: `${val.id}/banner.webp`,
+        Body: consumedBody,
+        ContentType: "image/webp",
+        ContentLength:
+          bannerImage.headers.get("content-length") != null
+            ? Number(bannerImage.headers.get("content-length"))
+            : undefined,
+      };
+
+      try {
+        const data = await s3Client.send(new PutObjectCommand(uploadParams));
+        console.log(`File uploaded successfully. ${data.ETag}`);
+      } catch (err) {
+        console.error("Error uploading file:", err);
+      }
+
+      // Update prisma field
+      await prisma.club.update({
+        where: { id: val.id },
+        data: { bannerImage: true },
+      });
+    })
+  );
+}
+
 async function main() {
   // Add club names that are already in database to seen club names set
   (
@@ -3110,27 +3250,53 @@ async function main() {
       .then((val) => val.map((v) => v.name))
   ).map((v) => seenClubNames.add(v));
 
-  for (const student of students) {
+  /* for (const student of students) {
     await prisma.student.upsert({
       where: { email: student.email },
       update: student,
       create: student,
     });
-  }
+  } */
+  await Promise.all(
+    students.map((student) =>
+      prisma.student.upsert({
+        where: { email: student.email },
+        update: student,
+        create: student,
+      })
+    )
+  );
 
-  for (const teacher of teachers) {
+  /* for (const teacher of teachers) {
     await prisma.teacher.upsert({
       where: { email: teacher.email },
       update: teacher,
       create: teacher,
     });
-  }
+  } */
+  await Promise.all(
+    teachers.map((teacher) =>
+      prisma.teacher.upsert({
+        where: { email: teacher.email },
+        update: teacher,
+        create: teacher,
+      })
+    )
+  );
 
   const fakeClubs = fakeClubsGen();
-  for (const fakeClub of fakeClubs) {
-    await prisma.club.create({
-      data: fakeClub,
-    });
+  // for (const fakeClub of fakeClubs) {
+  //   await prisma.club.create({
+  //     data: fakeClub,
+  //   });
+  // }
+  const createdFakeClubs = await Promise.all(
+    fakeClubs.map((fakeClub) => prisma.club.create({ data: fakeClub }))
+  );
+
+  if (process.env.SEED_S3 === "true") {
+    console.log("Seeding S3...");
+    await seedS3(createdFakeClubs);
   }
 
   // RIP for the handwritten clubs and vtubers

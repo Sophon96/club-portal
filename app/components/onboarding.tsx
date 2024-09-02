@@ -98,7 +98,7 @@ export function Onboarding({ studentExists }: OnboardingProps) {
               <Label htmlFor="name" className="text-right">
                 Name
               </Label>
-              <Input id="name" name="name" className="col-span-3" />
+              <Input id="name" name="name" defaultValue={user.name} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
