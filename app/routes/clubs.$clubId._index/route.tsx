@@ -48,13 +48,13 @@ import { Card, CardContent } from "~/components/ui/card";
 import { ImageGallery } from "./image-gallery";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  const preloadTags = data
+  const preloadGalleryTags = data
     ? data.galleryImageUrls.map((url) => {
         return { tagName: "link", rel: "preload", href: url, as: "image" };
       })
     : [];
 
-  return [{ title: `${data?.club.name} | DSHS Clubs` }, ...preloadTags];
+  return [{ title: `${data?.club.name} | DSHS Clubs` }, ...preloadGalleryTags];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

@@ -25,7 +25,7 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
         <div>
           <ul className="flex m-0 p-0 gap-x-4">
             <li>
-              <Link to="/clubs">
+              <Link to="/clubs" prefetch="render">
                 <Button variant="link">Catalog</Button>
               </Link>
             </li>
