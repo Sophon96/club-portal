@@ -97,26 +97,37 @@ export async function checkIsOfficerOrAdvisor(
 ): Promise<boolean> {
   if (!user) return false;
 
-  const club = await prisma.club.findUnique({
-    where,
-    select: {
-      officers: {
-        select: {
-          studentEmail: true,
+  const club = await prisma.club
+    .findUnique({
+      where,
+      select: {
+        officers: {
+          select: {
+            studentEmail: true,
+          },
+        },
+        advisor: {
+          select: {
+            email: true,
+          },
         },
       },
-      advisor: {
-        select: {
-          email: true,
-        },
-      },
-    },
-  });
+    })
+    .then((val) => {
+      return val
+        ? {
+            ...val,
+            officers: val.officers.map((officer) => officer.studentEmail),
+          }
+        : null;
+    });
   if (!club) return false;
+
+  // console.log(club);
 
   switch (user.type) {
     case "student":
-      return club.officers.includes({ studentEmail: user.email });
+      return club.officers.includes(user.email);
     case "teacher":
       return club.advisor.email === user.email;
     case "admin":

@@ -19,10 +19,19 @@ import clsx from "clsx";
 import { authenticator } from "./auth.server";
 import { AuthProvider } from "./components/authprovider";
 import sonnerStyles from "~/components/ui/sonner.css?url";
+import "@fontsource-variable/public-sans";
+import publicSans from "@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
   { rel: "stylesheet", href: sonnerStyles },
+  {
+    rel: "preload",
+    href: publicSans,
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  },
 ];
 
 // shadcn dark mode

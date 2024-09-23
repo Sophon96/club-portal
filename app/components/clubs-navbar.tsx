@@ -1,36 +1,44 @@
-import { Form, Link, useSubmit } from "@remix-run/react";
+import { Form, Link, useLocation, useSubmit } from "@remix-run/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { AuthInfo } from "~/auth.server";
 import { LogOut, User } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
+import { useMediaQuery } from "~/hooks/use-media-query";
+import clsx from "clsx";
 
 export function ClubsNavbar(props: { user: AuthInfo | null }) {
+  const location = useLocation();
   const submit = useSubmit();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   return (
     <>
-      <nav className="flex justify-between items-center p-4">
+      <nav className="flex justify-between items-center py-2 px-4">
         <div>
-          <Link to="/" className="text-2xl font-extrabold">
+          <Link to="/" className="text-lg font-semibold">
             DSHS Clubs
           </Link>
         </div>
 
-        <div>
-          <ul className="flex m-0 p-0 gap-x-4">
-            <li>
-              <Link to="/clubs" prefetch="render">
-                <Button variant="link">Catalog</Button>
-              </Link>
-            </li>
-          </ul>
-        </div>
+        {isDesktop ? (
+          <div>
+            <ul className="flex m-0 p-0 gap-x-4">
+              <li>
+                <Link to="/clubs" prefetch="render">
+                  Catalog
+                </Link>
+              </li>
+            </ul>
+          </div>
+        ) : null}
 
         <div>
           <ul className="flex m-0 p-0 gap-x-2">
@@ -41,12 +49,24 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
               {props.user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost">
-                      <User className="mr-2 inline" />
-                      {props.user.email}
+                    <Button
+                      variant="ghost"
+                      size={isDesktop ? "default" : "icon"}
+                      className="p-2"
+                    >
+                      <User className={clsx("inline", isDesktop && "mr-2")} />
+                      {isDesktop ? props.user.email : null}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
+                    {!isDesktop ? (
+                      <>
+                        <DropdownMenuLabel>
+                          {props.user.email}
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                      </>
+                    ) : null}
                     <Form action="/logout" method="POST">
                       {/* <button type="submit"> */}
                       {/* <Button type="submit" asChild> */}
@@ -66,7 +86,12 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
                 </DropdownMenu>
               ) : (
                 <>
-                  <Link to="/login">
+                  <Link
+                    to={{
+                      pathname: "/login",
+                      search: `?returnTo=${location.pathname}`,
+                    }}
+                  >
                     <Button variant="outline">
                       <User className="mr-1 h-4 w-4 inline" /> Sign in
                     </Button>

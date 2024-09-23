@@ -11,7 +11,7 @@ export const authSessionStorage = createCookieSessionStorage({
     sameSite: "lax", // this helps with CSRF
     path: "/", // remember to add this so the cookie will work in all routes
     httpOnly: true, // for security reasons, make this cookie http only
-    secrets: process.env.COOKIE_SECRETS?.split(" "), // FIXME: replace this with an actual secret
+    secrets: process.env.COOKIE_SECRETS?.split(" "),
     secure: isProduction, // enable this in prod only
   },
 });

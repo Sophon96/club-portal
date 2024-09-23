@@ -46,12 +46,16 @@ import { getPresignedUrl, s3Client } from "~/s3.server";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { Card, CardContent } from "~/components/ui/card";
 import { ImageGallery } from "./image-gallery";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import OfficerBanner from "./officer-banner";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const preloadGalleryTags = data
-    ? data.galleryImageUrls.map((url) => {
-        return { tagName: "link", rel: "preload", href: url, as: "image" };
-      })
+    ? data.galleryImageUrls
+        .filter((url) => typeof url === "string")
+        .map((url) => {
+          return { tagName: "link", rel: "preload", href: url, as: "image" };
+        })
     : [];
 
   return [{ title: `${data?.club.name} | DSHS Clubs` }, ...preloadGalleryTags];
@@ -135,7 +139,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           },
         },
       },
-      members: officerOrAdvisor,
     },
   });
 
@@ -145,6 +148,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       statusText: "Not Found",
     });
   }
+
+  // School policy disallows revealing student names or emails to the public
+  // so we overwrite the officers data with null if unauthenticated
+  // FIXME: this probably isn't secure because it's 1:09 am
+  const overwriteOfficers = user ? {} : { officers: null };
 
   const numMembers = await prisma.member.count({
     where: { club: { id: params.clubId } },
@@ -188,8 +196,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    club: { ...club, meetings: meetingsWithStringDates, numMembers },
+    club: {
+      ...club,
+      meetings: meetingsWithStringDates,
+      numMembers,
+      ...overwriteOfficers,
+    },
     user: { ...user, membershipId },
+    officerOrAdvisor,
     galleryImageUrls,
   });
 }
@@ -214,8 +228,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  // FIXME: add returnTo parameters to other /login redirects and check
+  // security of unsafely appending request.url as param
   const user = await authenticator.isAuthenticated(request, {
-    failureRedirect: "/login",
+    failureRedirect: "/login?returnTo=" + request.url,
   });
 
   // Figure out if the student is a member or not.
@@ -270,7 +286,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function Club() {
   const params = useParams();
   const clubId = params.clubId;
-  const { club, user, galleryImageUrls } = useLoaderData<typeof loader>();
+  const { club, user, officerOrAdvisor, galleryImageUrls } =
+    useLoaderData<typeof loader>();
   const meetings = club.meetings.map((mtg) => {
     // Remember when we turned the dates into strings in the loader?
     // Time to turn them back into Date objects.
@@ -279,6 +296,15 @@ export default function Club() {
     const schedule = assembleRRuleSet({ ...mtg.schedule, rdates, exdates });
     return { ...mtg, schedule };
   });
+  const nextMeeting = meetings
+    .map((mtg) => {
+      // ensuing ternary is because typescript can't follow the filter
+      const nextDT = mtg.schedule.after(new Date(), true);
+      return nextDT ? { name: mtg.name, dt: nextDT } : null;
+    })
+    .filter((m) => !!m)
+    .sort((a, b) => a.dt.getTime() - b.dt.getTime())
+    .at(0);
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 
@@ -321,6 +347,7 @@ export default function Club() {
 
   return (
     <>
+      {officerOrAdvisor ? <OfficerBanner /> : null}
       <div className="px-4 lg:px-8 w-full max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-8 mt-4 lg:mt-12 ">
         <ImageGallery galleryImageUrls={galleryImageUrls} />
         <div className="lg:w-1/2">
@@ -334,13 +361,13 @@ export default function Club() {
               <User className="mr-2 h-4 w-4 inline" />
             )}
             {club.numMembers + optimisticValue} member
-            {club.numMembers + optimisticValue > 0 ? "s" : ""}
+            {club.numMembers + optimisticValue !== 1 ? "s" : ""}
           </span>
           <p className="leading-7 [&:not(:first-child)]:mt-6">
             {club.description}
           </p>
-          {!user.membershipId ? (
-            <Form /* action={`/clubs/${clubId}/members`} */ method="POST">
+          <Form method="POST">
+            {!user.membershipId ? (
               <Button
                 type="submit"
                 variant="default"
@@ -351,12 +378,7 @@ export default function Club() {
               >
                 Join Club
               </Button>
-            </Form>
-          ) : (
-            <Form
-              // action={`/clubs/${clubId}/members/${user.membershipId}`}
-              method="DELETE"
-            >
+            ) : (
               <Button
                 type="submit"
                 variant="destructive"
@@ -367,16 +389,66 @@ export default function Club() {
               >
                 Leave Club
               </Button>
-            </Form>
-          )}
-          <Accordion
-            type="multiple"
-            defaultValue={[/* "meetings-accordion", */ "people-accordion"]}
-          >
+            )}
+          </Form>
+          <Accordion type="multiple" defaultValue={["people-accordion"]}>
             <AccordionItem value="meetings-accordion">
               <AccordionTrigger>Meetings</AccordionTrigger>
               <AccordionContent>
-                <UL className="my-0">
+                <p className="text-lg">
+                  {nextMeeting ? (
+                    <>
+                      <b>Next meeting:</b> {nextMeeting.name} on{" "}
+                      {nextMeeting.dt?.toDateString()}
+                    </>
+                  ) : (
+                    "There are no upcoming meetings"
+                  )}
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Schedule</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {meetings.map((mtg, idxMtg) => (
+                      <TableRow key={idxMtg}>
+                        <TableCell>{mtg.name}</TableCell>
+                        <TableCell>{mtg.location}</TableCell>
+                        <TableCell>{formatDuration(mtg.duration)}</TableCell>
+                        <TableCell>
+                          <UL className="[&>li]:mt-0.5 my-0">
+                            {mtg.schedule.rrules().map((rule, i_rule) => {
+                              return (
+                                <li key={`${i_rule}`}>{formatRRule(rule)}</li>
+                              );
+                            })}
+                            {mtg.schedule.rdates().map((date, i_date) => (
+                              <li key={`${i_date}`}>
+                                on {date.toDateString()}
+                              </li>
+                            ))}
+                            {mtg.schedule.exrules().map((exrule, i_exr) => (
+                              <li key={`${i_exr}`}>
+                                except for {formatRRule(exrule)}
+                              </li>
+                            ))}
+                            {mtg.schedule.exdates().map((exd, i_exd) => (
+                              <li key={`${i_exd}`}>
+                                except for {exd.toDateString()}
+                              </li>
+                            ))}
+                          </UL>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {/* <UL className="my-0">
                   {meetings.map((mtg, i_mtg) => (
                     <li key={`${i_mtg}`}>
                       <Large>{mtg.name}</Large>
@@ -409,30 +481,7 @@ export default function Club() {
                       </UL>
                     </li>
                   ))}
-                </UL>
-                {/* <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Interval</TableHead>
-                      <TableHead>Frequency</TableHead>
-                      <TableHead>Start Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {club.meetings.map((mtg) => (
-                      <TableRow
-                        key={`${mtg.location}_${mtg.interval}_${mtg.frequency}_${mtg.startDate}`}
-                      >
-                        <TableCell>{mtg.location}</TableCell>
-                        <TableCell>{mtg.interval}</TableCell>
-                        <TableCell>{mtg.frequency}</TableCell>
-                        <TableCell>{mtg.startDate}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table> */}
+                </UL> */}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="people-accordion">
@@ -456,21 +505,25 @@ export default function Club() {
                 <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
                   Officers
                 </h4>
-                <UL className="mt-0">
-                  {club.officers.map((officer) => {
-                    return (
-                      <li key={officer.id}>
-                        <span className="font-semibold">{officer.role}:</span>{" "}
-                        {officer.student.name}
-                        <a href={`mailto: ${officer.studentEmail}`}>
-                          <Small className="text-muted-foreground ml-2">
-                            {officer.studentEmail}
-                          </Small>
-                        </a>
-                      </li>
-                    );
-                  })}
-                </UL>
+                {club.officers ? (
+                  <UL className="mt-0">
+                    {club.officers.map((officer) => {
+                      return (
+                        <li key={officer.id}>
+                          <span className="font-semibold">{officer.role}:</span>{" "}
+                          {officer.student.name}
+                          <a href={`mailto:${officer.studentEmail}`}>
+                            <Small className="text-muted-foreground ml-2">
+                              {officer.studentEmail}
+                            </Small>
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </UL>
+                ) : (
+                  <P>Please log in to view club officers.</P>
+                )}
               </AccordionContent>
             </AccordionItem>
           </Accordion>

@@ -17,15 +17,14 @@ export function ImageGallery({
   return (
     <>
       {galleryImageUrls.length ? (
-        <Carousel className="lg:w-1/2 h-fit bg-gray-200 dark:bg-gray-800 rounded-2xl overflow-hidden">
+        <Carousel className="lg:w-1/2 h-fit overflow-hidden">
           <CarouselContent>
             {galleryImageUrls.map((url, idx) => (
-              <CarouselItem
-                key={idx}
-                className="aspect-[4/3] flex flex-col justify-center"
-              >
+              <CarouselItem key={idx} className="aspect-[4/3]">
                 {url ? (
-                  <img src={url} className="object-contain" />
+                  <Card className="size-full bg-muted flex flex-col justify-center border-none">
+                    <img src={url} className="object-contain" />
+                  </Card>
                 ) : (
                   <Card className="w-full">
                     <CardContent className="flex flex-col items-center justify-center h-full">

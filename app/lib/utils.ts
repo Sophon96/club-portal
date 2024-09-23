@@ -46,6 +46,7 @@ export function notReady(func?: LoaderFunction) {
 
   return (lfa: LoaderFunctionArgs) => {
     if (typeof func !== "undefined") func(lfa);
+    else return null;
   };
 }
 

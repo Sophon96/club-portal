@@ -121,9 +121,9 @@ export default function Club() {
 
   return (
     <>
-      <div className="w-screen bg-blue-600 h-96 mb-8">
+      <div className="w-screen bg-primary h-40 md:h-96">
         <div className="md:w-1/2  max-md:mx-4 m-auto flex flex-col justify-center items-center">
-          <h1 className="scroll-m-20 text-4xl text-white font-extrabold tracking-tight lg:text-5xl mb-12 mt-24">
+          <h1 className="scroll-m-20 text-4xl text-white font-extrabold tracking-tight lg:text-5xl mb-4 md:mb-12 mt-8 md:mt-24">
             Clubs Catalog
           </h1>
           <Form className="w-full" method="GET">
@@ -132,12 +132,14 @@ export default function Club() {
               type="search"
               placeholder="Search for a club"
               defaultValue={searchParams.get("q") ?? undefined}
+              className="appearance-none"
             />
           </Form>
         </div>
       </div>
-      <div className="flex flex-wrap shrink-0 justify-center items-center gap-4 max-w-7xl m-auto">
-        {/* <Card className="w-96 h-60 overflow-hidden">
+      <main className="w-screen flex justify-center items-center">
+        <div className="flex flex-wrap justify-center items-center gap-4 max-w-7xl m-4">
+          {/* <Card className="w-96 h-60 overflow-hidden">
           <img
             className="w-full h-24 object-cover"
             src="https://images.unsplash.com/photo-1682687221175-fd40bbafe6ca"
@@ -151,64 +153,65 @@ export default function Club() {
             </CardDescription>
           </CardHeader>
         </Card> */}
-        {clubInfos.map((club) => {
-          const idAsNum = parseInt(club.id, 16);
-          // Every tailwindcss color
-          const colorClassNames = [
-            "bg-slate-200 dark:bg-slate-700",
-            "bg-gray-200 dark:bg-gray-700",
-            "bg-zinc-200 dark:bg-zinc-700",
-            "bg-stone-200 dark:bg-stone-700",
-            "bg-red-200 dark:bg-red-700",
-            "bg-orange-200 dark:bg-orange-700",
-            "bg-amber-200 dark:bg-amber-700",
-            "bg-yellow-200 dark:bg-yellow-700",
-            "bg-lime-200 dark:bg-lime-700",
-            "bg-green-200 dark:bg-green-700",
-            "bg-emerald-200 dark:bg-emerald-700",
-            "bg-teal-200 dark:bg-teal-700",
-            "bg-cyan-200 dark:bg-cyan-700",
-            "bg-sky-200 dark:bg-sky-700",
-            "bg-blue-200 dark:bg-blue-700",
-            "bg-indigo-200 dark:bg-indigo-700",
-            "bg-violet-200 dark:bg-violet-700",
-            "bg-purple-200 dark:bg-purple-700",
-            "bg-fuchsia-200 dark:bg-fuchsia-700",
-            "bg-pink-200 dark:bg-pink-700",
-            "bg-rose-200 dark:bg-rose-700",
-          ];
+          {clubInfos.map((club) => {
+            const idAsNum = parseInt(club.id, 16);
+            // Every tailwindcss color
+            const colorClassNames = [
+              "bg-slate-200 dark:bg-slate-700",
+              "bg-gray-200 dark:bg-gray-700",
+              "bg-zinc-200 dark:bg-zinc-700",
+              "bg-stone-200 dark:bg-stone-700",
+              "bg-red-200 dark:bg-red-700",
+              "bg-orange-200 dark:bg-orange-700",
+              "bg-amber-200 dark:bg-amber-700",
+              "bg-yellow-200 dark:bg-yellow-700",
+              "bg-lime-200 dark:bg-lime-700",
+              "bg-green-200 dark:bg-green-700",
+              "bg-emerald-200 dark:bg-emerald-700",
+              "bg-teal-200 dark:bg-teal-700",
+              "bg-cyan-200 dark:bg-cyan-700",
+              "bg-sky-200 dark:bg-sky-700",
+              "bg-blue-200 dark:bg-blue-700",
+              "bg-indigo-200 dark:bg-indigo-700",
+              "bg-violet-200 dark:bg-violet-700",
+              "bg-purple-200 dark:bg-purple-700",
+              "bg-fuchsia-200 dark:bg-fuchsia-700",
+              "bg-pink-200 dark:bg-pink-700",
+              "bg-rose-200 dark:bg-rose-700",
+            ];
 
-          return (
-            <Link
-              key={club.id}
-              to={`/clubs/${club.id}`}
-              className="w-full max-w-sm h-60"
-            >
-              <Card className="overflow-hidden min-h-0 h-full flex flex-col">
-                {club.bannerUrl ? (
-                  <img
-                    className="w-full sm:mx-0 h-24 flex-shrink-0 object-cover"
-                    src={club.bannerUrl}
-                  />
-                ) : (
-                  <div
-                    className={cn(
-                      "w-full sm:mx-0 h-24 flex-shrink-0",
-                      colorClassNames[idAsNum % colorClassNames.length]
-                    )}
-                  />
-                )}
-                <CardHeader className="min-h-0 flex-grow flex flex-col">
-                  <CardTitle>{club.name}</CardTitle>
-                  <CardDescription className="overflow-hidden text-ellipsis flex-grow">
-                    {club.description}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
+            return (
+              <Link
+                key={club.id}
+                to={`/clubs/${club.id}`}
+                className="w-full max-w-sm h-60"
+              >
+                <Card className="overflow-hidden min-h-0 h-full flex flex-col">
+                  {club.bannerUrl ? (
+                    <img
+                      className="w-full sm:mx-0 h-24 flex-shrink-0 object-cover"
+                      src={club.bannerUrl}
+                    />
+                  ) : (
+                    <div
+                      className={cn(
+                        "w-full sm:mx-0 h-24 flex-shrink-0",
+                        colorClassNames[idAsNum % colorClassNames.length]
+                      )}
+                    />
+                  )}
+                  <CardHeader className="min-h-0 flex-grow flex flex-col">
+                    <CardTitle>{club.name}</CardTitle>
+                    <CardDescription className="line-clamp-3 flex-grow">
+                      {club.description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      </main>
     </>
   );
 }
