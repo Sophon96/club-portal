@@ -1,7 +1,7 @@
 import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import clsx from "clsx/lite";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, UserCircle } from "lucide-react";
 import { authenticator } from "~/auth.server";
 import { Large } from "~/components/ui/typography";
 import { prisma } from "~/db.server";
@@ -28,25 +28,43 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     });
   }
 
+  const student = await prisma.student.findUnique({where: {email: user.email}})
+  if (!student) {
+    return json({name: club.name, onboardingNeeded: true, isMember: false})
+  }
+
   // console.log(club)
   // more than zero members indicates that the user is already a member
   const isMember = club.members.length > 0;
 
   if (!isMember) {
-    // FIXME: one of these days, I'll refactor the prisma schema to not have
-    // Member rely on that stupid clubName unique constraint and I'll be able
-    // to get rid of these awkward queries that are probably slower anyways.
-    await prisma.club.update({
-      where: { id: params.clubId },
-      data: { members: { create: { studentEmail: user.email } } },
+    await prisma.member.create({
+      data: {
+        club: { connect: { id: params.clubId } },
+        student: { connect: { email: user.email } },
+      },
     });
   }
 
-  return json({ name: club.name, isMember });
+  return json({ name: club.name, isMember, onboardingNeeded: false });
 };
 
 export default function ClubJoinQR() {
-  const { name, isMember } = useLoaderData<typeof loader>();
+  const { name, isMember, onboardingNeeded } = useLoaderData<typeof loader>();
+
+  if (onboardingNeeded) {
+    return <main className="w-screen min-h-full flex flex-col items-center justify-center">
+      <UserCircle
+        className={clsx(
+          "size-1/4 aspect-square",
+          "text-muted-foreground"
+        )}
+      />
+      <Large className="text-4xl">
+        Complete onboarding to join {name}.
+      </Large>
+    </main>
+  }
 
   return (
     <main className="w-screen min-h-full flex flex-col items-center justify-center">
