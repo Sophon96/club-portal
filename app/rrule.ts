@@ -44,6 +44,7 @@ export function formatRRule(rule: RRule) {
     wkst,
     count,
     until,
+    bysetpos,
     bymonth,
     byweekday,
     byhour,
@@ -65,13 +66,13 @@ export function formatRRule(rule: RRule) {
     "December",
   ];
   const weekdayNames = [
-    "Sunday",
     "Monday",
     "Tuesday",
     "Wednesday",
     "Thursday",
     "Friday",
     "Saturday",
+    "Sunday",
   ];
 
   let result = "every ";
