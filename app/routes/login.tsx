@@ -1,8 +1,12 @@
-import {authReturnToCookie} from "~/cookies.server"
-import { json, LoaderFunction } from "@remix-run/node";
+import { authReturnToCookie } from "~/cookies.server";
+import { json, type LoaderFunction, type MetaFunction } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import { H1 } from "~/components/ui/typography";
+
+export const meta: MetaFunction = () => {
+  return [{ title: "Login | DSHS Clubs" }];
+};
 
 export let loader: LoaderFunction = async ({ request }) => {
   let url = new URL(request.url);
