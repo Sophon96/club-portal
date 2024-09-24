@@ -48,6 +48,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { ImageGallery } from "./image-gallery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import OfficerBanner from "./officer-banner";
+import { z } from "zod";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const preloadGalleryTags = data
@@ -234,17 +235,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
     failureRedirect: "/login?returnTo=" + request.url,
   });
 
+  const formData = await request.formData();
+  const actionResult = z
+    .literal("join")
+    .or(z.literal("leave"))
+    .safeParse(formData.get("_action"));
+  if (!actionResult.success) {
+    return json(
+      {
+        success: false,
+        action: "noclue",
+        error: "Unrecognized action",
+      },
+      400
+    );
+  }
+  const _action = actionResult.data;
+
   // Figure out if the student is a member or not.
   // Kinda unintuitive but we want to avoid selecting Members because of the awkward compound unique key
-  const memberships = await prisma.student
-    .findUnique({
-      where: { email: user.email },
-      select: { memberships: { where: { club: { id: params.clubId } } } },
-    })
-    .then((student) => student!.memberships);
+  const student = await prisma.student.findUnique({
+    where: { email: user.email },
+    select: { memberships: { where: { club: { id: params.clubId } } } },
+  });
 
-  const formData = await request.formData();
-  const { _action } = Object.fromEntries(formData);
+  if (!student) {
+    // Didn't finish onboarding
+    return json({
+      success: false,
+      action: _action,
+      error: "Onboarding must be completed before joining clubs.",
+    });
+  }
+  // .then((student) => student!.memberships);
+  const memberships = student.memberships;
 
   if (_action === "join") {
     if (memberships.length) {
@@ -272,6 +296,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await prisma.member.delete({ where: { id: memberships[0].id } });
     return json({ success: true, action: "leave", error: null });
   } else {
+    console.error("zod broke, club join action:", _action);
     return json(
       {
         success: false,
@@ -338,7 +363,7 @@ export default function Club() {
           `Club ${actionData.action === "join" ? "joined" : "left"}!`
         );
       } else {
-        toast.error("Failed to join club", {
+        toast.error("Failed to join/leave club", {
           description: actionData.error,
         });
       }
