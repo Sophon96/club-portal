@@ -21,7 +21,7 @@ export default function Clubs() {
   return (
     <>
       <ClubsNavbar user={user} />
-      {user ? <Onboarding studentExists={!!student} /> : null}
+      {user ? <Onboarding studentExists={!!student} user={user} /> : null}
       <Outlet />
       <Toaster />
     </>

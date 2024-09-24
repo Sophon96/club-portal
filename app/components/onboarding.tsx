@@ -13,21 +13,23 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useAuth } from "~/components/authprovider";
 import { action as studentOnboardingAction } from "~/routes/student_onboarding._index";
+import { type AuthInfo } from "~/auth.server";
 
 interface OnboardingProps {
+  user: AuthInfo;
   studentExists: boolean;
 }
 
-export function Onboarding({ studentExists }: OnboardingProps) {
+export function Onboarding({ user, studentExists }: OnboardingProps) {
   const [dialogOpen, setDialogOpen] = useState(true);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const fetcher = useFetcher<typeof studentOnboardingAction>();
-  const user = useAuth();
+  // const user = useAuth();
   let [successToastId, setSuccessToastId] = useState(
     null as null | string | number
   );
 
-  if (!user) return;
+  // if (!user) return;
 
   useEffect(() => {
     if (!onboardingComplete && !dialogOpen) {
@@ -40,32 +42,33 @@ export function Onboarding({ studentExists }: OnboardingProps) {
         },
       });
     }
-  }, [dialogOpen, onboardingComplete]);
 
-  if (
-    fetcher.state === "idle" &&
-    fetcher.data &&
-    onboardingComplete &&
-    successToastId
-  ) {
-    if (fetcher.data.success) {
-      toast.success("Onboarding completed!", { id: successToastId });
-    } else {
-      toast.error(
-        "Error encountered while completing onboarding: " + fetcher.data.error,
-        { id: successToastId, important: true }
-      );
-      setOnboardingComplete(false);
-      // toast.warning("Onboarding incomplete", {
-      //   duration: Infinity,
-      //   description: "Please complete onboarding to access all features",
-      //   action: {
-      //     label: "Complete",
-      //     onClick: () => setDialogOpen(true),
-      //   },
-      // });
+    if (
+      fetcher.state === "idle" &&
+      fetcher.data &&
+      onboardingComplete &&
+      successToastId
+    ) {
+      if (fetcher.data.success) {
+        toast.success("Onboarding completed!", { id: successToastId });
+      } else {
+        toast.error(
+          "Error encountered while completing onboarding: " +
+            fetcher.data.error,
+          { id: successToastId, important: true }
+        );
+        setOnboardingComplete(false);
+        // toast.warning("Onboarding incomplete", {
+        //   duration: Infinity,
+        //   description: "Please complete onboarding to access all features",
+        //   action: {
+        //     label: "Complete",
+        //     onClick: () => setDialogOpen(true),
+        //   },
+        // });
+      }
     }
-  }
+  }, [fetcher, dialogOpen, onboardingComplete]);
 
   if (studentExists) return;
 
@@ -98,7 +101,12 @@ export function Onboarding({ studentExists }: OnboardingProps) {
               <Label htmlFor="name" className="text-right">
                 Name
               </Label>
-              <Input id="name" name="name" defaultValue={user.name} className="col-span-3" />
+              <Input
+                id="name"
+                name="name"
+                defaultValue={user.name}
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
