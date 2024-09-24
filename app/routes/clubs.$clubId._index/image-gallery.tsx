@@ -36,8 +36,8 @@ export function ImageGallery({
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-4 transition-all duration-150 disabled:opacity-0 opacity-50 hover:opacity-100" />
-          <CarouselNext className="right-4 opacity-50 hover:opacity-100" />
+          <CarouselPrevious className="left-4 transition-opacity disabled:opacity-0 opacity-50 hover:opacity-100" />
+          <CarouselNext className="right-4 transition-opacity disabled:opacity-0 opacity-50 hover:opacity-100" />
         </Carousel>
       ) : (
         <Card className="lg:w-1/2 rounded-2xl hidden lg:block h-fit">
