@@ -40,11 +40,11 @@ export function formatDuration(seconds: number): string {
  * Remove when finished with implementation.
  */
 export function notReady(func?: LoaderFunction) {
-  if (process.env.NODE_ENV === "production") {
-    throw new Response(null, { status: 404, statusText: "Not Found" });
-  }
-
   return (lfa: LoaderFunctionArgs) => {
+    if (process.env.NODE_ENV === "production") {
+      throw new Response(null, { status: 404, statusText: "Not Found" });
+    }
+
     if (typeof func !== "undefined") func(lfa);
     else return null;
   };
