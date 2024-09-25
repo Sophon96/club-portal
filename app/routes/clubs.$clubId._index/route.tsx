@@ -12,7 +12,7 @@ import {
   useParams,
 } from "@remix-run/react";
 import { formatISO } from "date-fns";
-import { ImageOff, User, Users } from "lucide-react";
+import { ImageOff, Loader2, User, Users } from "lucide-react";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import {
   Accordion,
@@ -334,8 +334,9 @@ export default function Club() {
   const navigation = useNavigation();
 
   // use optimistic data
+  // FIXME: no as of 2024-09-24 because pending is better
   let optimisticValue = 0;
-  if (navigation.formData) {
+  /* if (navigation.formData) {
     // Optimistic offset to club members
     optimisticValue = navigation.formData.get("_action") === "join" ? 1 : -1;
     // Optimistic membership status
@@ -354,7 +355,7 @@ export default function Club() {
   //       : null;
   //   }
   //   console.log("Attempting optimistic UI")
-  // }, [navigation.state]);
+  // }, [navigation.state]); */
 
   useEffect(() => {
     if (actionData) {
@@ -400,7 +401,11 @@ export default function Club() {
                 name="_action"
                 value="join"
                 className="w-full mt-6"
+                disabled={navigation.state !== "idle"}
               >
+                {navigation.state !== "idle" ? (
+                  <Loader2 className="mr-2 animate-spin" />
+                ) : null}
                 Join Club
               </Button>
             ) : (
@@ -411,7 +416,11 @@ export default function Club() {
                 name="_action"
                 value="leave"
                 className="w-full mt-6"
+                disabled={navigation.state !== "idle"}
               >
+                {navigation.state !== "idle" ? (
+                  <Loader2 className="mr-2 animate-spin" />
+                ) : null}
                 Leave Club
               </Button>
             )}
