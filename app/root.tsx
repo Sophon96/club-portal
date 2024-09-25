@@ -56,6 +56,20 @@ export default function AppWithProviders() {
   );
 }
 
+function CloudflareAnalytics() {
+  return (
+    <>
+      {/* <!-- Cloudflare Web Analytics --> */}
+      <script
+        defer
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon='{"token": "9d4559e260a94dff956a06d5e52a1f14"}'
+      ></script>
+      {/* <!-- End Cloudflare Web Analytics --> */}
+    </>
+  );
+}
+
 export function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
@@ -72,6 +86,7 @@ export function App() {
         <Outlet />
         <ScrollRestoration />
         <Scripts />
+        <CloudflareAnalytics />
       </body>
     </html>
   );
