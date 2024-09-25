@@ -35,12 +35,20 @@ import { useEffect, useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import clsx from "clsx";
+import { isValidObjectId } from "~/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Dash: ${data?.name} | DSHS Clubs` }];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  if (!isValidObjectId(params.clubId!)) {
+    throw new Response(null, {
+      status: 404,
+      statusText: "Not Found",
+    });
+  }
+
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
   });

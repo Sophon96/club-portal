@@ -5,12 +5,20 @@ import { CheckCircle, UserCircle } from "lucide-react";
 import { authenticator } from "~/auth.server";
 import { Large } from "~/components/ui/typography";
 import { prisma } from "~/db.server";
+import { isValidObjectId } from "~/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Joining ${data?.name} | DSHS Clubs` }];
 };
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
+  if (!isValidObjectId(params.clubId!)) {
+    throw new Response(null, {
+      status: 404,
+      statusText: "Not Found",
+    });
+  }
+
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login?returnTo=" + request.url,
   });
