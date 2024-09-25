@@ -36,9 +36,11 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     });
   }
 
-  const student = await prisma.student.findUnique({where: {email: user.email}})
+  const student = await prisma.student.findUnique({
+    where: { email: user.email },
+  });
   if (!student) {
-    return json({name: club.name, onboardingNeeded: true, isMember: false})
+    return json({ name: club.name, onboardingNeeded: true, isMember: false });
   }
 
   // console.log(club)
@@ -61,28 +63,30 @@ export default function ClubJoinQR() {
   const { name, isMember, onboardingNeeded } = useLoaderData<typeof loader>();
 
   if (onboardingNeeded) {
-    return <main className="w-screen min-h-full flex flex-col items-center justify-center">
-      <UserCircle
-        className={clsx(
-          "size-1/4 aspect-square",
-          "text-muted-foreground"
-        )}
-      />
-      <Large className="text-4xl">
-        Complete onboarding to join {name}.
-      </Large>
-    </main>
+    return (
+      <main className="w-screen p-2 h-screen -z-10 absolute top-0 flex flex-col md:flex-row gap-4 items-center justify-center">
+        <UserCircle
+          className={clsx(
+            "w-[min(25vw,25vh)] h-[min(25vw,25vh)]",
+            "text-muted-foreground"
+          )}
+        />
+        <Large className="text-4xl text-center">
+          Complete onboarding to join {name}.
+        </Large>
+      </main>
+    );
   }
 
   return (
-    <main className="w-screen min-h-full flex flex-col items-center justify-center">
+    <main className="w-screen p-2 h-screen -z-10 absolute top-0 flex flex-col md:flex-row gap-4 items-center justify-center">
       <CheckCircle
         className={clsx(
-          "size-1/4 aspect-square",
+          "w-[min(25vw,25vh)] h-[min(25vw,25vh)]",
           isMember ? "text-muted-foreground" : "text-green-500"
         )}
       />
-      <Large className="text-4xl">
+      <Large className="text-4xl text-center">
         {isMember
           ? `You are already a member of ${name}`
           : `You are now a member of ${name}!`}
