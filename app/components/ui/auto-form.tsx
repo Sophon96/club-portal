@@ -222,11 +222,11 @@ export type AutoFormInputComponentProps = {
 };
 
 function AutoFormInput({
-                         label,
-                         isRequired,
-                         fieldConfigItem,
-                         fieldProps,
-                       }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  fieldConfigItem,
+  fieldProps,
+}: AutoFormInputComponentProps) {
   return (
     <FormItem>
       <FormLabel>
@@ -257,11 +257,11 @@ function AutoFormNumber({ fieldProps, ...props }: AutoFormInputComponentProps) {
 }
 
 function AutoFormTextarea({
-                            label,
-                            isRequired,
-                            fieldConfigItem,
-                            fieldProps,
-                          }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  fieldConfigItem,
+  fieldProps,
+}: AutoFormInputComponentProps) {
   return (
     <FormItem>
       <FormLabel>
@@ -280,12 +280,12 @@ function AutoFormTextarea({
 }
 
 function AutoFormCheckbox({
-                            label,
-                            isRequired,
-                            field,
-                            fieldConfigItem,
-                            fieldProps,
-                          }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  field,
+  fieldConfigItem,
+  fieldProps,
+}: AutoFormInputComponentProps) {
   return (
     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
       <FormControl>
@@ -309,12 +309,12 @@ function AutoFormCheckbox({
 }
 
 function AutoFormSwitch({
-                          label,
-                          isRequired,
-                          field,
-                          fieldConfigItem,
-                          fieldProps,
-                        }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  field,
+  fieldConfigItem,
+  fieldProps,
+}: AutoFormInputComponentProps) {
   return (
     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
       <FormControl>
@@ -338,12 +338,12 @@ function AutoFormSwitch({
 }
 
 function AutoFormRadioGroup({
-                              label,
-                              isRequired,
-                              field,
-                              zodItem,
-                              fieldProps,
-                            }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  field,
+  zodItem,
+  fieldProps,
+}: AutoFormInputComponentProps) {
   const values = (zodItem as unknown as z.ZodEnum<any>)._def.values;
 
   return (
@@ -378,12 +378,12 @@ function AutoFormRadioGroup({
 }
 
 function AutoFormDate({
-                        label,
-                        isRequired,
-                        field,
-                        fieldConfigItem,
-                        fieldProps,
-                      }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  field,
+  fieldConfigItem,
+  fieldProps,
+}: AutoFormInputComponentProps) {
   return (
     <FormItem>
       <FormLabel>
@@ -406,12 +406,12 @@ function AutoFormDate({
 }
 
 function AutoFormEnum({
-                        label,
-                        isRequired,
-                        field,
-                        fieldConfigItem,
-                        zodItem,
-                      }: AutoFormInputComponentProps) {
+  label,
+  isRequired,
+  field,
+  fieldConfigItem,
+  zodItem,
+}: AutoFormInputComponentProps) {
   const baseValues = (getBaseSchema(zodItem) as unknown as z.ZodEnum<any>)._def
     .values;
 
@@ -489,11 +489,11 @@ function DefaultParent({ children }: { children: React.ReactNode }) {
 }
 
 function AutoFormObject<SchemaType extends z.ZodObject<any, any>>({
-                                                                    schema,
-                                                                    form,
-                                                                    fieldConfig,
-                                                                    path = [],
-                                                                  }: {
+  schema,
+  form,
+  fieldConfig,
+  path = [],
+}: {
   schema: SchemaType;
   form: ReturnType<typeof useForm>;
   fieldConfig?: FieldConfig<z.infer<SchemaType>>;
@@ -594,11 +594,11 @@ function AutoFormObject<SchemaType extends z.ZodObject<any, any>>({
 }
 
 function AutoFormArray({
-                         name,
-                         item,
-                         form,
-                         path = [],
-                       }: {
+  name,
+  item,
+  form,
+  path = [],
+}: {
   name: string;
   item: z.ZodArray<any>;
   form: ReturnType<typeof useForm>;
@@ -658,15 +658,15 @@ type ZodObjectOrWrapped =
   | z.ZodEffects<z.ZodObject<any, any>>;
 
 function AutoForm<SchemaType extends ZodObjectOrWrapped>({
-                                                           formSchema,
-                                                           values: valuesProp,
-                                                           onValuesChange: onValuesChangeProp,
-                                                           onParsedValuesChange,
-                                                           onSubmit: onSubmitProp,
-                                                           fieldConfig,
-                                                           children,
-                                                           className,
-                                                         }: {
+  formSchema,
+  values: valuesProp,
+  onValuesChange: onValuesChangeProp,
+  onParsedValuesChange,
+  onSubmit: onSubmitProp,
+  fieldConfig,
+  children,
+  className,
+}: {
   formSchema: SchemaType;
   values?: Partial<z.infer<SchemaType>>;
   onValuesChange?: (values: Partial<z.infer<SchemaType>>) => void;

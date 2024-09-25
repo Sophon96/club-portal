@@ -6,11 +6,11 @@ import { singleton } from "./singleton.server";
 const prisma = singleton("prisma", getPrismaClient);
 
 function getPrismaClient() {
-    const client = new PrismaClient();
-    // connect eagerly
-    client.$connect();
+  const client = new PrismaClient();
+  // connect eagerly
+  client.$connect();
 
-    return client;
+  return client;
 }
 
 export { prisma };

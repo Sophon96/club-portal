@@ -1,16 +1,16 @@
-import { Moon, Sun } from "lucide-react"
-import { Theme, useTheme } from "remix-themes"
+import { Moon, Sun } from "lucide-react";
+import { Theme, useTheme } from "remix-themes";
 
-import { Button } from "./ui/button"
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
+} from "./ui/dropdown-menu";
 
 export function ModeToggle() {
-  const [, setTheme] = useTheme()
+  const [, setTheme] = useTheme();
 
   return (
     <DropdownMenu>
@@ -30,6 +30,6 @@ export function ModeToggle() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
 // above taken directly from https://ui.shadcn.com/docs/dark-mode/remix

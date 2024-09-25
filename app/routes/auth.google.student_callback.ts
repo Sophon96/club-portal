@@ -4,7 +4,8 @@ import { authReturnToCookie } from "~/cookies.server";
 import { commitSession, getSession } from "~/session.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const returnToPath = (await authReturnToCookie.parse(request.headers.get("Cookie"))) ?? "/"
+  const returnToPath =
+    (await authReturnToCookie.parse(request.headers.get("Cookie"))) ?? "/";
 
   const user = await authenticator.authenticate("student", request, {
     failureRedirect: "/login",

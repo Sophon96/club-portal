@@ -10,6 +10,7 @@ mongodb
 
 nocommit*
 
+
 # Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux,visualstudiocode,jetbrains,node,remix,remix+cloudflarepages
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,linux,visualstudiocode,jetbrains,node,remix,remix+cloudflarepages
 
@@ -376,3 +377,5 @@ $RECYCLE.BIN/
 .idea
 /functions/metafile.*
 .dev.vars
+
+pnpm-lock.yaml

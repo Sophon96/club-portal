@@ -152,14 +152,16 @@ const ImageCard = React.forwardRef<
     attributes: DraggableAttributes;
     listeners?: SyntheticListenerMap;
   }
->(({listeners, attributes, ...props}, ref) => {
+>(({ listeners, attributes, ...props }, ref) => {
   return (
-    <li data-vaul-no-drag ref={ref} className="flex flex-row items-center" {...props}>
+    <li
+      data-vaul-no-drag
+      ref={ref}
+      className="flex flex-row items-center"
+      {...props}
+    >
       <GripVertical className="touch-none" {...listeners} {...attributes} />
-      <Card
-        
-        className="relative w-full md:w-48 aspect-[4/3] rounded-sm md:rounded-lg bg-muted flex justify-center items-center"
-      >
+      <Card className="relative w-full md:w-48 aspect-[4/3] rounded-sm md:rounded-lg bg-muted flex justify-center items-center">
         <img src={props.img} className="object-contain" draggable={false} />
         <Button
           variant="destructive"

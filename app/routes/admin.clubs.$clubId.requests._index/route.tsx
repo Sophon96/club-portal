@@ -1,14 +1,16 @@
-import {useParams} from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 import { notReady } from "~/lib/utils.server";
 
 export const loader = notReady();
 
 export default function AdminClubsRequests() {
   const params = useParams();
-  const clubId = params.clubId
+  const clubId = params.clubId;
 
-  return <>
-    <h1>Placeholder</h1>
-    <h3>Admin Clubs Requests Dashboard for club {clubId}</h3>
-  </>
+  return (
+    <>
+      <h1>Placeholder</h1>
+      <h3>Admin Clubs Requests Dashboard for club {clubId}</h3>
+    </>
+  );
 }

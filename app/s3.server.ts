@@ -9,19 +9,21 @@ export const s3Client = new S3Client({
     secretAccessKey: process.env.S3_SECRET_KEY!,
   },
   forcePathStyle: true,
-})
+});
 
 export async function getPresignedUrl(key: string) {
   const command = new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET,
-      Key: key,
+    Bucket: process.env.S3_BUCKET,
+    Key: key,
   });
 
   try {
-      const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-      return signedUrl;
+    const signedUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 3600,
+    });
+    return signedUrl;
   } catch (err) {
-      console.error("Error generating presigned URL", err);
-      throw err;
+    console.error("Error generating presigned URL", err);
+    throw err;
   }
 }
