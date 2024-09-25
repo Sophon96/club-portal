@@ -4,6 +4,10 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { StudentAuthInfo, type AuthInfo } from "~/auth.server";
 
+export const isProduction =
+  process.env.NODE_ENV === "production" ||
+  process.env.CONTEXT === "production"; /* Netlify sets CONTEXT */
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -41,7 +45,8 @@ export function formatDuration(seconds: number): string {
  */
 export function notReady(func?: LoaderFunction) {
   return (lfa: LoaderFunctionArgs) => {
-    if (process.env.NODE_ENV === "production") {
+      if (isProduction) {
+        console.log("notReady loader hit:", lfa.request.url);
       throw new Response(null, { status: 404, statusText: "Not Found" });
     }
 

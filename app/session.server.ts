@@ -1,7 +1,6 @@
 import { createCookieSessionStorage } from "@remix-run/node";
 import { createThemeSessionResolver } from "remix-themes";
-
-const isProduction = process.env.NODE_ENV === "production";
+import { isProduction } from "./lib/utils";
 
 // FIXME: code stolen from remix-auth readme
 // export the whole sessionStorage object
