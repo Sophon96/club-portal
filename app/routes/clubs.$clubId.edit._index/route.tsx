@@ -25,13 +25,15 @@ import { H2 } from "~/components/ui/typography";
 import { prisma } from "~/db.server";
 import { getPresignedUrl, s3Client } from "~/s3.server";
 import ImageEdit from "./image-edit";
-import { isValidObjectId } from "~/lib/utils";
+import { isValidObjectId, notReady } from "~/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Editing ${data?.club.name} | DSHS Clubs` }];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  notReady()({ request });
+
   if (!isValidObjectId(params.clubId!)) {
     throw new Response(null, {
       status: 404,

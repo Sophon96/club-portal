@@ -43,16 +43,28 @@ export function formatDuration(seconds: number): string {
  * Loader function to indicate that the route is not ready for production use.
  * Remove when finished with implementation.
  */
+export function notReady(): ({ request }: { request: Request }) => void;
+export function notReady<T extends LoaderFunction>(
+  func: T
+): (lfa: LoaderFunctionArgs) => ReturnType<T>;
 export function notReady(func?: LoaderFunction) {
-  return (lfa: LoaderFunctionArgs) => {
+  if (func) {
+    return (lfa: LoaderFunctionArgs) => {
       if (isProduction) {
         console.log("notReady loader hit:", lfa.request.url);
-      throw new Response(null, { status: 404, statusText: "Not Found" });
-    }
+        throw new Response(null, { status: 404, statusText: "Not Found" });
+      }
 
-    if (typeof func !== "undefined") func(lfa);
-    else return null;
-  };
+      func(lfa);
+    };
+  } else {
+    return ({ request }: { request: Request }) => {
+      if (isProduction) {
+        console.log("notReady loader hit:", request.url);
+        throw new Response(null, { status: 404, statusText: "Not Found" });
+      }
+    };
+  }
 }
 
 /* 2024-08-23 -- First and foremost: I have on clue what this is for.

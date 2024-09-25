@@ -1,4 +1,7 @@
 import {useParams} from "@remix-run/react";
+import { notReady } from "~/lib/utils";
+
+export const loader = notReady();
 
 export default function AdminClubsIndex() {
   const params = useParams();

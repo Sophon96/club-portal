@@ -1,8 +1,13 @@
 import { ActionFunctionArgs, json } from "@remix-run/node";
 
 import { Form, useActionData, useParams } from "@remix-run/react";
+import { notReady } from "~/lib/utils";
+
+export const loader = notReady();
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  notReady()({ request });
+
   const body = await request.formData();
   const intent = body.get("intent");
   //const { intent } = await request.json<RequestDecisionBody>();

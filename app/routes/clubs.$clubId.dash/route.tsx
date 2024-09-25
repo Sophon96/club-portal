@@ -1,4 +1,9 @@
-import { json, LoaderFunctionArgs, MetaFunction, redirect } from "@remix-run/node";
+import {
+  json,
+  LoaderFunctionArgs,
+  MetaFunction,
+  redirect,
+} from "@remix-run/node";
 import {
   Link,
   useHref,
@@ -35,13 +40,15 @@ import { useEffect, useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import clsx from "clsx";
-import { isValidObjectId } from "~/lib/utils";
+import { isValidObjectId, notReady } from "~/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Dash: ${data?.name} | DSHS Clubs` }];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  notReady()({ request });
+
   if (!isValidObjectId(params.clubId!)) {
     throw new Response(null, {
       status: 404,

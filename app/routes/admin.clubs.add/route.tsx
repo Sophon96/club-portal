@@ -4,6 +4,7 @@ import { useSubmit } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { prisma } from "~/db.server";
+import { notReady } from "~/lib/utils";
 
 const formSchema = z.object({
   clubName: z.string({ required_error: "This field must be filled." }),
@@ -40,7 +41,11 @@ const formSchema = z.object({
   approved: z.boolean().describe("Approved for this school year"),
 });
 
+export const loader = notReady();
+
 export async function action({ request, params }: ActionFunctionArgs) {
+  notReady()({ request });
+
   let form = await request.json();
 
   const result = await formSchema.safeParseAsync(form);
@@ -61,17 +66,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
     .then((r) => (r ? errors.push("Advisor does not exist") : null));
 
-  await prisma.student.findUnique({
-    where: {
-      email: result.data.founder,
-    },
-    select: {
-      id: true,
-    },
-  }).then(r => r ? errors.push("Founder does not exist"): null);
+  await prisma.student
+    .findUnique({
+      where: {
+        email: result.data.founder,
+      },
+      select: {
+        id: true,
+      },
+    })
+    .then((r) => (r ? errors.push("Founder does not exist") : null));
 
   for (const officer of result.data.officers) {
-
   }
 
   // TODO: DEBUG
