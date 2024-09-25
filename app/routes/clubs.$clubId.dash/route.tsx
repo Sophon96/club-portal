@@ -40,7 +40,8 @@ import { useEffect, useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import clsx from "clsx";
-import { isValidObjectId, notReady } from "~/lib/utils";
+import { isValidObjectId } from "~/lib/utils";
+import { notReady } from "~/lib/utils.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Dash: ${data?.name} | DSHS Clubs` }];

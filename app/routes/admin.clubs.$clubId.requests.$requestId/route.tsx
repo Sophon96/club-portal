@@ -1,7 +1,7 @@
 import { ActionFunctionArgs, json } from "@remix-run/node";
 
 import { Form, useActionData, useParams } from "@remix-run/react";
-import { notReady } from "~/lib/utils";
+import { notReady } from "~/lib/utils.server";
 
 export const loader = notReady();
 

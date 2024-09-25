@@ -1,4 +1,4 @@
-import { notReady } from "~/lib/utils";
+import { notReady } from "~/lib/utils.server";
 
 export const loader = notReady();
 

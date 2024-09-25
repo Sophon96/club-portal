@@ -1,12 +1,7 @@
-import { LoaderFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { StudentAuthInfo, type AuthInfo } from "~/auth.server";
-
-export const isProduction =
-  process.env.NODE_ENV === "production" ||
-  process.env.CONTEXT === "production"; /* Netlify sets CONTEXT */
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -38,54 +33,3 @@ export function formatDuration(seconds: number): string {
 
   return result.trim();
 }
-
-/**
- * Loader function to indicate that the route is not ready for production use.
- * Remove when finished with implementation.
- */
-export function notReady(): ({ request }: { request: Request }) => void;
-export function notReady<T extends LoaderFunction>(
-  func: T
-): (lfa: LoaderFunctionArgs) => ReturnType<T>;
-export function notReady(func?: LoaderFunction) {
-  if (func) {
-    return (lfa: LoaderFunctionArgs) => {
-      if (isProduction) {
-        console.log("notReady loader hit:", lfa.request.url);
-        throw new Response(null, { status: 404, statusText: "Not Found" });
-      }
-
-      func(lfa);
-    };
-  } else {
-    return ({ request }: { request: Request }) => {
-      if (isProduction) {
-        console.log("notReady loader hit:", request.url);
-        throw new Response(null, { status: 404, statusText: "Not Found" });
-      }
-    };
-  }
-}
-
-/* 2024-08-23 -- First and foremost: I have on clue what this is for.
- * I'm pretty sure I wrote this about six months ago, and I didn't finish it.
- * My thought it that I meant to restrict access to /clubs/* routes to student
- * accounts only, but I didn't implement the root layout loader or fix any of
- * the type errors. Anyways, I've commented it out for now.
- * Update: It was actually 11 months ago. 2024-09-30. Yikes. I should probably
- * start writing comments so stuff like this doesn't happen again.
- * useUser: ???
- * useRequiredStudentUser: ???
- */
-// export function useUser(): AuthInfo | null {
-//   let [rootMatch] = useMatches();
-//   return rootMatch.data.user;
-// }
-
-// export function useRequiredStudentUser(): StudentAuthInfo {
-//   let user = useUser();
-//   if (!user) throw new Error("User not authenticated");
-//   if (user.type !== "student") throw new Error("Not a student");
-//   if (user.type === "student") return user;
-//   return user;
-// }

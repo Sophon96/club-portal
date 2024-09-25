@@ -25,7 +25,8 @@ import { H2 } from "~/components/ui/typography";
 import { prisma } from "~/db.server";
 import { getPresignedUrl, s3Client } from "~/s3.server";
 import ImageEdit from "./image-edit";
-import { isValidObjectId, notReady } from "~/lib/utils";
+import { isValidObjectId } from "~/lib/utils";
+import { notReady } from "~/lib/utils.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Editing ${data?.club.name} | DSHS Clubs` }];

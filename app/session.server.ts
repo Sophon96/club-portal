@@ -1,6 +1,6 @@
 import { createCookieSessionStorage } from "@remix-run/node";
 import { createThemeSessionResolver } from "remix-themes";
-import { isProduction } from "./lib/utils";
+import { isProduction } from "./lib/utils.server";
 
 // FIXME: code stolen from remix-auth readme
 // export the whole sessionStorage object

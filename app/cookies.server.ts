@@ -1,5 +1,5 @@
 import { createCookie } from "@remix-run/node";
-import { isProduction } from "./lib/utils";
+import { isProduction } from "./lib/utils.server";
 
 export const authReturnToCookie = createCookie("HEYYOUCOMEBACKHERE", {
   path: "/",

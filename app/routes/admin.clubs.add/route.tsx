@@ -4,7 +4,7 @@ import { useSubmit } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { prisma } from "~/db.server";
-import { notReady } from "~/lib/utils";
+import { notReady } from "~/lib/utils.server";
 
 const formSchema = z.object({
   clubName: z.string({ required_error: "This field must be filled." }),
