@@ -1,13 +1,14 @@
 import { LoaderFunction, LoaderFunctionArgs } from "@remix-run/node";
 
-export const isProduction = process.env.NODE_ENV === "production" ||
-  process.env.CONTEXT === "production"; /* Netlify sets CONTEXT */
+export const isProduction =
+  process.env.NODE_ENV === "production" ||
+  process.env.NETLIFY_CONTEXT === "production"; /* Set manually in Netlify */
 
 /**
  * Loader function to indicate that the route is not ready for production use.
  * Remove when finished with implementation.
  */
-export function notReady(): ({ request }: { request: Request; }) => void;
+export function notReady(): ({ request }: { request: Request }) => void;
 export function notReady<T extends LoaderFunction>(
   func: T
 ): (lfa: LoaderFunctionArgs) => ReturnType<T>;
@@ -22,7 +23,7 @@ export function notReady(func?: LoaderFunction) {
       func(lfa);
     };
   } else {
-    return ({ request }: { request: Request; }) => {
+    return ({ request }: { request: Request }) => {
       if (isProduction) {
         console.log("notReady loader hit:", request.url);
         throw new Response(null, { status: 404, statusText: "Not Found" });
