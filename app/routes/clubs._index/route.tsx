@@ -76,7 +76,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       pipeline: [
         {
           $search: {
-            index: "brandonDevIndex",
+            index: process.env.SEARCH_INDEX!,
             text: {
               query: query,
               path: ["name", "description"],
