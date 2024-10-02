@@ -130,7 +130,7 @@ export function formatRRule(rule: RRule) {
   }
   if (timeParts.length) result += ` at ${timeParts.join("")}`;
 
-  const startDate = `${weekdayNames[dtstart.getUTCDay()]}, ${
+  const startDate = `${weekdayNames[(dtstart.getUTCDay() + 6) % 7]}, ${
     monthNames[dtstart.getUTCMonth()]
   } ${dtstart.getUTCDate()}, ${dtstart.getUTCFullYear()}`;
   result += ` starting on ${startDate}`;
