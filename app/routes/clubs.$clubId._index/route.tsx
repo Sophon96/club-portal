@@ -357,6 +357,9 @@ export default function Club() {
   //   console.log("Attempting optimistic UI")
   // }, [navigation.state]); */
 
+  const submittingForm = navigation.state !== "idle" && !!navigation.formAction
+  // console.log(navigation)
+
   useEffect(() => {
     if (actionData) {
       if (actionData.success) {
@@ -401,10 +404,10 @@ export default function Club() {
                 name="_action"
                 value="join"
                 className="w-full mt-6"
-                disabled={navigation.state !== "idle"}
+                disabled={submittingForm}
               >
-                {navigation.state !== "idle" ? (
-                  <Loader2 className="mr-2 animate-spin" />
+                {submittingForm ? (
+                  <Loader2 className="size-[1.2rem] mr-2 animate-spin" />
                 ) : null}
                 Join Club
               </Button>
@@ -416,10 +419,10 @@ export default function Club() {
                 name="_action"
                 value="leave"
                 className="w-full mt-6"
-                disabled={navigation.state !== "idle"}
+                disabled={submittingForm}
               >
-                {navigation.state !== "idle" ? (
-                  <Loader2 className="mr-2 animate-spin" />
+                {submittingForm ? (
+                  <Loader2 className="size-[1.2rem] mr-2 animate-spin" />
                 ) : null}
                 Leave Club
               </Button>
