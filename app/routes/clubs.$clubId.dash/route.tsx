@@ -12,7 +12,7 @@ import {
   useNavigation,
   useParams,
 } from "@remix-run/react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail, MailPlus, QrCodeIcon } from "lucide-react";
 import { toast } from "sonner";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import { Button } from "~/components/ui/button";
@@ -126,7 +126,10 @@ export default function ClubDashboard() {
         <H1 className="">{name}</H1>
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="mt-2 mb-4">Generate Join QR Code</Button>
+            <Button className="mt-2 mb-4">
+              <QrCodeIcon className="size-4 mr-2" />
+              Generate Join QR Code
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -206,7 +209,10 @@ export default function ClubDashboard() {
               "mailto:" + members.map((member) => member.studentEmail).join(",")
             }
           >
-            <Button>Mail to everyone</Button>
+            <Button>
+              <Mail className="size-4 mr-2" />
+              Mail to everyone
+            </Button>
           </a>
           <Button
             variant="secondary"
@@ -218,6 +224,7 @@ export default function ClubDashboard() {
               toast.success("Emails copied to clipboard!");
             }}
           >
+            <MailPlus className="size-4 mr-2" />
             Copy all email addresses
           </Button>
         </div>
