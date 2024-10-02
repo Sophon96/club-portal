@@ -48,7 +48,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  notReady()({ request });
+  // notReady()({ request });
 
   if (!isValidObjectId(params.clubId!)) {
     throw new Response(null, {
