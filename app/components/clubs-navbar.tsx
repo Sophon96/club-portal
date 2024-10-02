@@ -54,7 +54,7 @@ export function ClubsNavbar(props: { user: AuthInfo | null }) {
                       size={isDesktop ? "default" : "icon"}
                       className="p-2"
                     >
-                      <User className={clsx("inline", isDesktop && "mr-2")} />
+                      <User className={clsx("inline size-[1.2rem]", isDesktop && "mr-2")} />
                       {isDesktop ? props.user.email : null}
                     </Button>
                   </DropdownMenuTrigger>
