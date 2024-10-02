@@ -116,7 +116,7 @@ export default function ClubDashboard() {
 
   return (
     <>
-      <Link to="../" rel="">
+      <Link to="../" relative="path">
         <Button variant="link">
           <ArrowLeft className="size-4 inline mr-2" />
           Return to public view
