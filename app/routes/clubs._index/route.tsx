@@ -121,9 +121,9 @@ export default function Club() {
 
   return (
     <>
-      <div className="w-screen bg-primary h-40 md:h-96">
-        <div className="md:w-1/2  max-md:mx-4 m-auto flex flex-col justify-center items-center">
-          <h1 className="scroll-m-20 text-4xl text-white font-extrabold tracking-tight lg:text-5xl mb-4 md:mb-12 mt-8 md:mt-24">
+      <div className="w-screen bg-primary pb-4 lg:pb-24">
+        <div className="lg:w-1/2  max-lg:mx-4 m-auto flex flex-col justify-center items-center">
+          <h1 className="scroll-m-20 text-4xl text-white font-extrabold tracking-tight lg:text-5xl mb-4 lg:mb-12 mt-4 lg:mt-24">
             Clubs Catalog
           </h1>
           <Form className="w-full" method="GET">
