@@ -414,7 +414,7 @@ export default function Club() {
             ) : (
               <Button
                 type="submit"
-                variant="destructive"
+                variant="secondary"
                 size="lg"
                 name="_action"
                 value="leave"
