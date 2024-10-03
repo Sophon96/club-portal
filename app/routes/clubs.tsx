@@ -30,7 +30,7 @@ export default function Clubs() {
     null
   );
   useEffect(() => {
-    if (navigation.state !== "idle" && !loadingTimeout) {
+    if (navigation.state !== "idle" && !navigation.formAction && !loadingTimeout) {
       setLoadingTimeout(
         setTimeout(
           () =>
