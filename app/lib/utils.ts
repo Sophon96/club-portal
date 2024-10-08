@@ -1,5 +1,6 @@
 import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
+import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { StudentAuthInfo, type AuthInfo } from "~/auth.server";
 
@@ -32,4 +33,8 @@ export function formatDuration(seconds: number): string {
   }
 
   return result.trim();
+}
+
+export function formatDate(date: Date) {
+  return format(date, "PPPPpp")
 }
