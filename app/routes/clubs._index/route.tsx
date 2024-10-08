@@ -185,6 +185,7 @@ export default function Club() {
                 key={club.id}
                 to={`/clubs/${club.id}`}
                 className="w-full max-w-sm h-60"
+                prefetch="viewport"
               >
                 <Card className="overflow-hidden min-h-0 h-full flex flex-col">
                   {club.bannerUrl ? (
