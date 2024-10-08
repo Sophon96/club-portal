@@ -487,41 +487,51 @@ export default function Club() {
                           <Clock className="size-[1.2em]" />
                           {formatDuration(meeting.duration)}
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {meeting.schedule.rrules().map((rrule) => (
-                            <Badge variant="secondary">
-                              <Calendar className="size-[1.2em] mr-1" />
-                              {formatRRule(rrule)}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {meeting.schedule.rdates().map((rdate) => (
-                            <Badge variant="secondary">
-                              <CalendarPlus className="size-[1.2em] mr-1" />
-                              on {formatDate(rdate)}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {meeting.schedule.exrules().map((exrule) => (
-                            <Badge
-                              variant="secondary"
-                              // className="bg-destructive/80 hover:bg-destructive/50"
-                            >
-                              <CalendarOff className="text-destructive size-[1.2em] mr-1" />
-                              except for {formatRRule(exrule)}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {meeting.schedule.exdates().map((exdate) => (
-                            <Badge variant="secondary">
-                              <CalendarMinus className="text-destructive size-[1.2em] mr-1" />
-                              except for {formatDate(exdate)}
-                            </Badge>
-                          ))}
-                        </div>
+                        {meeting.schedule.rrules().length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {meeting.schedule.rrules().map((rrule) => (
+                              <Badge variant="secondary">
+                                <Calendar className="size-[1.2em] mr-1" />
+                                {formatRRule(rrule)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                        {meeting.schedule.rdates().length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {meeting.schedule.rdates().map((rdate) => (
+                              <Badge variant="secondary">
+                                <CalendarPlus className="size-[1.2em] mr-1" />
+                                on {formatDate(rdate)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          0
+                        )}
+                        {meeting.schedule.exrules().length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {meeting.schedule.exrules().map((exrule) => (
+                              <Badge
+                                variant="secondary"
+                                // className="bg-destructive/80 hover:bg-destructive/50"
+                              >
+                                <CalendarOff className="text-destructive size-[1.2em] mr-1" />
+                                except for {formatRRule(exrule)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                        {meeting.schedule.exdates().length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {meeting.schedule.exdates().map((exdate) => (
+                              <Badge variant="secondary">
+                                <CalendarMinus className="text-destructive size-[1.2em] mr-1" />
+                                except for {formatDate(exdate)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
                       </CardContent>
                     </Card>
                   ))}
