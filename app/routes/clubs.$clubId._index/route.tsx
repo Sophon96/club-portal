@@ -506,9 +506,7 @@ export default function Club() {
                               </Badge>
                             ))}
                           </div>
-                        ) : (
-                          0
-                        )}
+                        ) : null}
                         {meeting.schedule.exrules().length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {meeting.schedule.exrules().map((exrule) => (
