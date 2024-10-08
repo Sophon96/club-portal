@@ -12,7 +12,18 @@ import {
   useParams,
 } from "@remix-run/react";
 import { formatISO } from "date-fns";
-import { ImageOff, Loader2, User, Users } from "lucide-react";
+import {
+  Calendar,
+  CalendarMinus,
+  CalendarOff,
+  CalendarPlus,
+  Clock,
+  ImageOff,
+  Loader2,
+  MapPin,
+  User,
+  Users,
+} from "lucide-react";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import {
   Accordion,
@@ -30,7 +41,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { prisma } from "~/db.server";
-import { formatDuration, isValidObjectId } from "~/lib/utils";
+import { formatDate, formatDuration, isValidObjectId } from "~/lib/utils";
 import { assembleRRuleSet, formatRRule } from "~/rrule";
 import { H1, Large, P, Small, UL } from "~/components/ui/typography";
 import { toast } from "sonner";
@@ -44,11 +55,13 @@ import {
 } from "~/components/ui/carousel";
 import { getPresignedUrl, s3Client } from "~/s3.server";
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { Card, CardContent } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ImageGallery } from "./image-gallery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import OfficerBanner from "./officer-banner";
 import { z } from "zod";
+import { Separator } from "~/components/ui/separator";
+import { Badge } from "~/components/ui/badge";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const preloadGalleryTags = data
@@ -357,7 +370,7 @@ export default function Club() {
   //   console.log("Attempting optimistic UI")
   // }, [navigation.state]); */
 
-  const submittingForm = navigation.state !== "idle" && !!navigation.formAction
+  const submittingForm = navigation.state !== "idle" && !!navigation.formAction;
   // console.log(navigation)
 
   useEffect(() => {
@@ -380,21 +393,20 @@ export default function Club() {
       <div className="px-4 lg:px-8 w-full max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-8 mt-4 lg:mt-12 ">
         <ImageGallery galleryImageUrls={galleryImageUrls} />
         <div className="lg:w-1/2">
-          <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
+          <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
             {club.name}
           </h2>
-          <span>
+          <Badge variant="secondary" className="mb-1">
             {club.numMembers + optimisticValue > 0 ? (
-              <Users className="mr-2 h-4 w-4 inline" />
+              <Users className="mr-1 size-[1.2em] inline" />
             ) : (
-              <User className="mr-2 h-4 w-4 inline" />
+              <User className="mr-1 size-[1.2em] inline" />
             )}
             {club.numMembers + optimisticValue} member
             {club.numMembers + optimisticValue !== 1 ? "s" : ""}
-          </span>
-          <p className="leading-7 [&:not(:first-child)]:mt-6">
-            {club.description}
-          </p>
+          </Badge>
+          <Separator />
+          <p className="leading-tight mt-4">{club.description}</p>
           <Form method="POST">
             {!user.membershipId ? (
               <Button
@@ -403,11 +415,11 @@ export default function Club() {
                 size="lg"
                 name="_action"
                 value="join"
-                className="w-full mt-6"
+                className="w-full mt-4"
                 disabled={submittingForm}
               >
                 {submittingForm ? (
-                  <Loader2 className="size-[1.2rem] mr-2 animate-spin" />
+                  <Loader2 className="size-[1.2em] mr-2 animate-spin" />
                 ) : null}
                 Join Club
               </Button>
@@ -418,17 +430,17 @@ export default function Club() {
                 size="lg"
                 name="_action"
                 value="leave"
-                className="w-full mt-6"
+                className="w-full mt-4"
                 disabled={submittingForm}
               >
                 {submittingForm ? (
-                  <Loader2 className="size-[1.2rem] mr-2 animate-spin" />
+                  <Loader2 className="size-[1.2em] mr-2 animate-spin" />
                 ) : null}
                 Leave Club
               </Button>
             )}
           </Form>
-          <Accordion type="multiple" defaultValue={["people-accordion"]}>
+          <Accordion type="multiple" defaultValue={["meetings-accordion","people-accordion"]}>
             <AccordionItem value="meetings-accordion">
               <AccordionTrigger>Meetings</AccordionTrigger>
               <AccordionContent>
@@ -436,13 +448,67 @@ export default function Club() {
                   {nextMeeting ? (
                     <>
                       <b>Next meeting:</b> {nextMeeting.name} on{" "}
-                      {nextMeeting.dt?.toDateString()}
+                      {formatDate(nextMeeting.dt)}
                     </>
                   ) : (
                     "There are no upcoming meetings"
                   )}
                 </p>
-                <Table>
+                <div className="mt-4 flex flex-col gap-4">
+                  {meetings.map((meeting, i) => (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>{meeting.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="size-[1.2em]" /><span className="sr-only">Location: </span>
+                          {meeting.location}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="size-[1.2em]" />
+                          {formatDuration(meeting.duration)}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {meeting.schedule.rrules().map((rrule) => (
+                            <Badge variant="secondary">
+                              <Calendar className="size-[1.2em] mr-1" />
+                              {formatRRule(rrule)}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {meeting.schedule.rdates().map((rdate) => (
+                            <Badge variant="secondary">
+                              <CalendarPlus className="size-[1.2em] mr-1" />
+                              on {formatDate(rdate)}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {meeting.schedule.exrules().map((exrule) => (
+                            <Badge
+                              variant="secondary"
+                              // className="bg-destructive/80 hover:bg-destructive/50"
+                            >
+                              <CalendarOff className="text-destructive size-[1.2em] mr-1" />
+                              except for {formatRRule(exrule)}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {meeting.schedule.exdates().map((exdate) => (
+                            <Badge variant="secondary">
+                              <CalendarMinus className="text-destructive size-[1.2em] mr-1" />
+                              except for {formatDate(exdate)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {/* <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
@@ -484,7 +550,7 @@ export default function Club() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </Table> */}
                 {/* <UL className="my-0">
                   {meetings.map((mtg, i_mtg) => (
                     <li key={`${i_mtg}`}>
