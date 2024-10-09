@@ -209,31 +209,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // FIXME: haphazard cache headers
-  const headers = new Headers();
-  headers.append(
-    "Cache-Control",
-    "public, max-age=120, stale-while-revalidate=120"
-  );
-  headers.append(
-    "Netlify-CDN-Cache-Control",
-    "public, durable, max-age=120, stale-while-revalidate=3600"
-  );
-
-  return json(
-    {
-      club: {
-        ...club,
-        meetings: meetingsWithStringDates,
-        numMembers,
-        ...overwriteOfficers,
-      },
-      user: { ...user, membershipId },
-      officerOrAdvisor,
-      galleryImageUrls,
+  return json({
+    club: {
+      ...club,
+      meetings: meetingsWithStringDates,
+      numMembers,
+      ...overwriteOfficers,
     },
-    { headers }
-  );
+    user: { ...user, membershipId },
+    officerOrAdvisor,
+    galleryImageUrls,
+  });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -454,10 +440,7 @@ export default function Club() {
               </Button>
             )}
           </Form>
-          <Accordion
-            type="multiple"
-            defaultValue={["meetings-accordion", "people-accordion"]}
-          >
+          <Accordion type="multiple" defaultValue={["meetings-accordion","people-accordion"]}>
             <AccordionItem value="meetings-accordion">
               <AccordionTrigger>Meetings</AccordionTrigger>
               <AccordionContent>
@@ -479,8 +462,7 @@ export default function Club() {
                       </CardHeader>
                       <CardContent className="grid gap-2">
                         <div className="flex items-center gap-2">
-                          <MapPin className="size-[1.2em]" />
-                          <span className="sr-only">Location: </span>
+                          <MapPin className="size-[1.2em]" /><span className="sr-only">Location: </span>
                           {meeting.location}
                         </div>
                         <div className="flex items-center gap-2">

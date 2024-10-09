@@ -47,17 +47,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const query = url.searchParams.get("q");
 
-  // FIXME: haphazard cache headers
-  const headers = new Headers();
-  headers.append(
-    "Cache-Control",
-    "public, max-age=120, stale-while-revalidate=120"
-  );
-  headers.append(
-    "Netlify-CDN-Cache-Control",
-    "public, durable, max-age=120, stale-while-revalidate=3600"
-  );
-
   if (!query) {
     const clubInfos = await prisma.club
       .findMany({
@@ -81,7 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         )
       );
 
-    return json(clubInfos, { headers });
+    return json(clubInfos);
   } else {
     const clubInfos = await prisma.club.aggregateRaw({
       pipeline: [
@@ -121,8 +110,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           const { bannerImage, ...clubWithoutBannerImage } = club;
           return { ...clubWithoutBannerImage, bannerUrl };
         })
-      ),
-      { headers }
+      )
     );
   }
 }
