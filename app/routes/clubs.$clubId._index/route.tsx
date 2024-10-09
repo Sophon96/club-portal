@@ -404,7 +404,7 @@ export default function Club() {
   return (
     <>
       {officerOrAdvisor ? <OfficerBanner /> : null}
-      <div className="px-4 lg:px-8 w-full max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-8 mt-4 lg:mt-12 ">
+      <div className="px-4 lg:px-8 w-full max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-4 lg:gap-8 mt-4 lg:mt-12 ">
         <ImageGallery galleryImageUrls={galleryImageUrls} />
         <div className="lg:w-1/2">
           <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
@@ -420,16 +420,16 @@ export default function Club() {
             {club.numMembers + optimisticValue !== 1 ? "s" : ""}
           </Badge>
           <Separator />
-          <p className="leading-tight mt-4">{club.description}</p>
+          <p className="leading-relaxed my-4">{club.description}</p>
           <Form method="POST">
             {!user.membershipId ? (
               <Button
                 type="submit"
                 variant="default"
-                size="lg"
+                // size="lg"
                 name="_action"
                 value="join"
-                className="w-full mt-4"
+                className="w-full"
                 disabled={submittingForm}
               >
                 {submittingForm ? (
@@ -441,10 +441,10 @@ export default function Club() {
               <Button
                 type="submit"
                 variant="secondary"
-                size="lg"
+                // size="lg"
                 name="_action"
                 value="leave"
-                className="w-full mt-4"
+                className="w-full"
                 disabled={submittingForm}
               >
                 {submittingForm ? (
@@ -461,7 +461,7 @@ export default function Club() {
             <AccordionItem value="meetings-accordion">
               <AccordionTrigger>Meetings</AccordionTrigger>
               <AccordionContent>
-                <p className="text-lg">
+                <p className="leading-relaxed">
                   {nextMeeting ? (
                     <>
                       <b>Next meeting:</b> {nextMeeting.name} on{" "}
