@@ -121,7 +121,7 @@ export default function Club() {
 
   return (
     <>
-      <div className="w-screen bg-primary pb-4 lg:pb-24">
+      <div className="w-full bg-primary pb-4 lg:pb-24">
         <div className="lg:w-1/2  max-lg:mx-4 m-auto flex flex-col justify-center items-center">
           <h1 className="scroll-m-20 text-4xl text-white font-extrabold tracking-tight lg:text-5xl mb-4 lg:mb-12 mt-4 lg:mt-24">
             Clubs Catalog
@@ -137,7 +137,7 @@ export default function Club() {
           </Form>
         </div>
       </div>
-      <main className="w-screen flex justify-center items-center">
+      <main className="w-full flex justify-center items-center">
         <div className="flex flex-wrap justify-center items-center gap-4 max-w-7xl m-4">
           {/* <Card className="w-96 h-60 overflow-hidden">
           <img

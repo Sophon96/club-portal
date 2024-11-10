@@ -15,7 +15,8 @@ model Club {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bannerImage Boolean @default(false)
+  bannerImage   Boolean        @default(false)
+  galleryImages GalleryImage[] @relation("Club")
 
   name        String    @unique
   description String
@@ -27,6 +28,18 @@ model Club {
 
   advisorId String @db.ObjectId
   founderId String @db.ObjectId
+}
+
+model GalleryImage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name String
+  alt  String
+
+  club   Club   @relation("Club", fields: [clubId], references: [id])
+  clubId String @db.ObjectId
 }
 
 type Meeting {
