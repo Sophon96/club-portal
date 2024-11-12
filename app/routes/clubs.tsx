@@ -72,6 +72,11 @@ export default function Clubs() {
       {user ? <Onboarding studentExists={!!student} user={user} /> : null}
       <Outlet />
       <Toaster />
+      <footer className="bg-muted py-8">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
+          <p>dshs.club | The platform for clubs at Davis Senior High School</p>
+        </div>
+      </footer>
     </>
   );
 }
