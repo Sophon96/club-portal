@@ -29,7 +29,14 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
         })
     : [];
 
-  return [{ title: "Catalog | DSHS Clubs" }, ...preloadS3Links];
+  return [
+    { title: "Catalog | DSHS Clubs" },
+    {
+      name: "description",
+      content: "A catalog of the clubs at Davis Senior High School",
+    },
+    ...preloadS3Links,
+  ];
 };
 
 const clubInfoSchema = z

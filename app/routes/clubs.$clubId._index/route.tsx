@@ -72,7 +72,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
         })
     : [];
 
-  return [{ title: `${data?.club.name} | DSHS Clubs` }, ...preloadGalleryTags];
+  return [
+    { title: `${data?.club.name} | DSHS Clubs` },
+    { name: "description", content: data?.club.description },
+    ...preloadGalleryTags,
+  ];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
