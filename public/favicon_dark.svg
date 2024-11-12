@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   fill="none"
+   stroke="currentColor"
+   stroke-width="2"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   class="lucide lucide-school"
+   version="1.1"
+   id="svg5"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs5" />
+  <rect
+     style="fill:#3b82f6;fill-opacity:1;stroke:#fafafa;stroke-width:0;stroke-opacity:1"
+     id="rect5"
+     height="24"
+     x="0"
+     y="0"
+     width="24" />
+  <path
+     d="m 13.454545,19.272723 v -2.90909 a 1.4545455,1.4545455 0 1 0 -2.90909,0 v 2.90909"
+     id="path1"
+     style="stroke:#fafafa;stroke-width:1.45455;stroke-opacity:1" />
+  <path
+     d="m 16.363636,10.545451 2.909091,1.454545 v 5.818182 a 1.4545455,1.4545455 0 0 1 -1.454545,1.454545 H 6.1818184 A 1.4545455,1.4545455 0 0 1 4.7272728,17.818178 v -5.818182 l 2.9090909,-1.454545"
+     id="path2"
+     style="stroke:#fafafa;stroke-width:1.45455;stroke-opacity:1" />
+  <path
+     d="M 16.363636,6.9090869 V 19.272723"
+     id="path3"
+     style="stroke:#fafafa;stroke-width:1.45455;stroke-opacity:1" />
+  <path
+     d="M 6.1818184,7.6363597 12,4.7272687 l 5.818182,2.909091"
+     id="path4"
+     style="stroke:#fafafa;stroke-width:1.45455;stroke-opacity:1" />
+  <path
+     d="M 7.6363637,6.9090869 V 19.272723"
+     id="path5"
+     style="stroke:#fafafa;stroke-width:1.45455;stroke-opacity:1" />
+  <circle
+     cx="12"
+     cy="9.8181772"
+     id="circle5"
+     style="stroke:#fafafa;stroke-width:1.45455;stroke-opacity:1"
+     r="1.4545455" />
+</svg>

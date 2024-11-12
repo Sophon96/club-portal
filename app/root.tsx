@@ -32,6 +32,18 @@ export const links: LinksFunction = () => [
     type: "font/woff2",
     crossOrigin: "anonymous",
   },
+  {
+    rel: "icon",
+    href: "favicon_light.svg",
+    type: "image/svg+xml",
+    media: "(prefers-color-scheme: light)",
+  },
+  {
+    rel: "icon",
+    href: "favicon_dark.svg",
+    type: "image/svg+xml",
+    media: "(prefers-color-scheme: dark)",
+  },
 ];
 
 // shadcn dark mode
