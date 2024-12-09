@@ -161,7 +161,8 @@ export default function Club() {
           </CardHeader>
         </Card> */}
           {clubInfos.map((club) => {
-            const idAsNum = parseInt(club.id, 16);
+            // only take the last two digits of the ID to prevent precision loss
+            const idAsNum = parseInt(club.id.slice(-2), 16);
             // Every tailwindcss color
             const colorClassNames = [
               "bg-slate-200 dark:bg-slate-700",
