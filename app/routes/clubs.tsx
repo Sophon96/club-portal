@@ -27,10 +27,14 @@ export default function Clubs() {
     typeof setTimeout
   > | null>(null);
   const [loadingToast, setLoadingToast] = useState<string | number | null>(
-    null
+    null,
   );
   useEffect(() => {
-    if (navigation.state !== "idle" && !navigation.formAction && !loadingTimeout) {
+    if (
+      navigation.state !== "idle" &&
+      !navigation.formAction &&
+      !loadingTimeout
+    ) {
       setLoadingTimeout(
         setTimeout(
           () =>
@@ -49,11 +53,11 @@ export default function Clubs() {
                     </span>
                   ))}
                 </div>,
-                { duration: Infinity, important: true }
-              )
+                { duration: Infinity, important: true },
+              ),
             ),
-          300
-        )
+          300,
+        ),
       );
     } else if (navigation.state === "idle" && loadingTimeout) {
       clearTimeout(loadingTimeout);
@@ -68,10 +72,17 @@ export default function Clubs() {
 
   return (
     <>
-      <ClubsNavbar user={user} />
-      {user ? <Onboarding studentExists={!!student} user={user} /> : null}
-      <Outlet />
+      <div className="min-h-screen">
+        <ClubsNavbar user={user} />
+        {user ? <Onboarding studentExists={!!student} user={user} /> : null}
+        <Outlet />
+      </div>
       <Toaster />
+      <footer className="bg-muted py-8">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
+          <p>dshs.club | The platform for clubs at Davis Senior High School</p>
+        </div>
+      </footer>
     </>
   );
 }

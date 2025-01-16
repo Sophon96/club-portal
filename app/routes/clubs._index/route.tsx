@@ -29,7 +29,14 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
         })
     : [];
 
-  return [{ title: "Catalog | DSHS Clubs" }, ...preloadS3Links];
+  return [
+    { title: "Catalog | DSHS Clubs" },
+    {
+      name: "description",
+      content: "A catalog of the clubs at Davis Senior High School",
+    },
+    ...preloadS3Links,
+  ];
 };
 
 const clubInfoSchema = z
@@ -154,7 +161,8 @@ export default function Club() {
           </CardHeader>
         </Card> */}
           {clubInfos.map((club) => {
-            const idAsNum = parseInt(club.id, 16);
+            // only take the last two digits of the ID to prevent precision loss
+            const idAsNum = parseInt(club.id.slice(-2), 16);
             // Every tailwindcss color
             const colorClassNames = [
               "bg-slate-200 dark:bg-slate-700",

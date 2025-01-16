@@ -72,7 +72,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
         })
     : [];
 
-  return [{ title: `${data?.club.name} | DSHS Clubs` }, ...preloadGalleryTags];
+  return [
+    { title: `${data?.club.name} | DSHS Clubs` },
+    { name: "description", content: data?.club.description },
+    ...preloadGalleryTags,
+  ];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -396,7 +400,7 @@ export default function Club() {
           <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
             {club.name}
           </h2>
-          <Badge variant="secondary" className="mb-1">
+          {/*<Badge variant="secondary" className="mb-1">
             {club.numMembers + optimisticValue > 0 ? (
               <Users className="mr-1 size-[1.2em] inline" />
             ) : (
@@ -404,7 +408,7 @@ export default function Club() {
             )}
             {club.numMembers + optimisticValue} member
             {club.numMembers + optimisticValue !== 1 ? "s" : ""}
-          </Badge>
+          </Badge>*/}
           <Separator />
           <p className="leading-relaxed my-4">{club.description}</p>
           <Form method="POST">
