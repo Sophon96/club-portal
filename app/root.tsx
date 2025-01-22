@@ -34,13 +34,13 @@ export const links: LinksFunction = () => [
   },
   {
     rel: "icon",
-    href: "favicon_light.svg",
+    href: "/favicon_light.svg",
     type: "image/svg+xml",
     media: "(prefers-color-scheme: light)",
   },
   {
     rel: "icon",
-    href: "favicon_dark.svg",
+    href: "/favicon_dark.svg",
     type: "image/svg+xml",
     media: "(prefers-color-scheme: dark)",
   },
