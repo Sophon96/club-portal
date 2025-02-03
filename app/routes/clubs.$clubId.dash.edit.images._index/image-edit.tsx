@@ -38,7 +38,7 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { HTMLAttributes, useMemo, useState } from "react";
+import { HTMLAttributes, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import React from "react";
 import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
@@ -55,63 +55,45 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { useFetcher } from "@remix-run/react";
 import { action as presignedS3Action } from "~/routes/clubs.$clubId.images.$imageId";
+import { action as saveOrderAction } from "~/routes/clubs.$clubId.images.order";
+import { toast } from "sonner";
 
 export default function ImageEdit({
-  images,
   imageIds,
+  images,
 }: {
-  images: (string | null)[];
   imageIds: string[];
+  images: { [key: string]: string | null };
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [items, setItems] = useState<Array<string>>(
-    Array.from({ length: images.length }, (v, k) => `${k}`),
-  );
-  const cards = items.map((id) => {
-    const numId = Number.parseInt(id);
-    return <ImageCard key={id} id={id} img={images[numId]} />;
-  });
+  const [items, setItems] = useState(imageIds);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+  // console.debug("activeId", activeId);
 
-  const imageDnd = (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={items} /*  strategy={horizontalListSortingStrategy} */
-      >
-        {items.map((id, idx) => {
-          const numId = Number.parseInt(id);
-          if (!images[numId]) return null;
-          return (
-            <SortableImageCard
-              key={id}
-              id={id}
-              img={images[numId]}
-              imgId={imageIds[numId]}
-            />
-          );
-        })}
-      </SortableContext>
-      <DragOverlay>
-        {activeId ? cards[Number.parseInt(activeId)] : null}
-      </DragOverlay>
-    </DndContext>
-  );
+  // the page will re-render with new images when an image is uploaded, so we
+  // append it to the already-ordered images
+  useEffect(() => {
+    // const imageKeys = Object.keys(images2);
+    const newIds = imageIds.filter((id) => !items.includes(id));
+    if (newIds.length > 0) {
+      setItems((prevOrder) => [...prevOrder, ...newIds]);
+    }
+    console.log("update effect ran");
+  }, [imageIds]);
 
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
+
     const id = z.coerce.string().parse(active.id);
+
+    console.debug("start drag", id);
 
     setActiveId(id);
   }
@@ -129,6 +111,8 @@ export default function ImageEdit({
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+
+    console.debug("end drag", active.id, over?.id);
 
     setActiveId(null);
   }
@@ -155,18 +139,70 @@ export default function ImageEdit({
   //     </DrawerContent>
   //   </Drawer>
   // );
-  return imageDnd;
+  return (
+    <>
+      <ul className="flex flex-row flex-wrap justify-center gap-2">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={items}>
+            {items.map((id) => {
+              // console.log(id);
+              // if (!images2[id]) return null;
+              return <SortableImageCard key={id} id={id} img={images[id]} />;
+            })}
+          </SortableContext>
+          <DragOverlay>
+            {activeId ? (
+              <ImageCard key={activeId} id={activeId} img={images[activeId]} />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </ul>
+      <SaveOrderForm orderedIds={items} />
+    </>
+  );
 }
 
-function SortableImageCard(
-  props: React.PropsWithChildren<{
-    id: string | number;
-    img: string;
-    imgId: string;
-  }>,
-) {
-  // The id needs to be a string because falsy values can't be passed to
-  // useSortable, and the number 0 is falsy, while the string "0" is not.
+const SaveOrderForm = ({ orderedIds }: { orderedIds: string[] }) => {
+  const fetcher = useFetcher<typeof saveOrderAction>();
+  const [toastId, setToastId] = useState<string | number | null>(null);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && toastId) {
+      // FIXME: add errors to toast
+      toast.success("Saved order!", { id: toastId });
+      setToastId(null);
+    }
+  }, [fetcher.state]);
+
+  return (
+    <Button
+      variant="default"
+      className="mt-2"
+      onClick={(e) => {
+        // console.log(e)
+        const thing = toast.loading("Saving order...");
+        setToastId(thing);
+        fetcher.submit(
+          { ids: orderedIds },
+          {
+            method: "POST",
+            action: "../../../images/order",
+            encType: "application/json",
+          },
+        );
+      }}
+    >
+      Save Order
+    </Button>
+  );
+};
+
+function SortableImageCard(props: { id: string; img: string | null }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: props.id });
 
@@ -177,99 +213,15 @@ function SortableImageCard(
 
   return (
     <li style={style}>
-      <ImageCardWithEditDialog
+      <ImageCard
         ref={setNodeRef}
         attributes={attributes}
         listeners={listeners}
         img={props.img}
-        imgId={props.imgId}
       />
     </li>
   );
 }
-
-const ImageCardWithEditDialog = React.forwardRef<
-  HTMLLIElement,
-  HTMLAttributes<HTMLLIElement> & {
-    img: string | null;
-    imgId: string;
-    attributes?: DraggableAttributes;
-    listeners?: SyntheticListenerMap;
-  }
->(({ listeners, attributes, ...props }, ref) => {
-  const [uploadImage, setUploadImage] = useState<File | null>(null);
-  const uploadImageSrc = useMemo(
-    () => uploadImage && URL.createObjectURL(uploadImage),
-    [uploadImage],
-  );
-  const presignedUrlFetcher = useFetcher<typeof presignedS3Action>();
-  const uploadFetcher = useFetcher();
-
-  console.log("url", props.imgId, presignedUrlFetcher.data);
-
-  return (
-    <Dialog>
-      <DialogTrigger className="size-full">
-        <ImageCard
-          listeners={listeners}
-          attributes={attributes}
-          img={props.img}
-        />
-      </DialogTrigger>
-      <DialogContent className="max-h-full overflow-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Image</DialogTitle>
-          <DialogDescription>
-            Replace or delete the image. Click submit when done.
-          </DialogDescription>
-        </DialogHeader>
-        {uploadImageSrc ? (
-          <img
-            src={uploadImageSrc}
-            className="aspect-[4/3] h-full w-full rounded bg-muted object-contain"
-          />
-        ) : (
-          <Card>
-            <CardContent className="aspect-[4/3] flex flex-col items-center justify-center text-muted-foreground">
-              <ImageOff className="w-1/3" />
-              No Image
-            </CardContent>
-          </Card>
-        )}
-
-        <uploadFetcher.Form action={presignedUrlFetcher.data} method="POST" className="flex flex-col gap-1.5">
-          <Label className="flex flex-col gap-1.5">
-            Image
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(event) => {
-                if (event.target.files && event.target.files[0]) {
-                  setUploadImage(event.target.files[0]);
-                  presignedUrlFetcher.submit(
-                    { size: event.target.files[0].size },
-                    { method: "POST", action: `../../images/${props.imgId}` },
-                  );
-                }
-              }}
-              className="cursor-pointer"
-            />
-          </Label>
-          <Button
-            type="submit"
-            disabled={
-              !uploadImage ||
-              presignedUrlFetcher.state !== "idle" ||
-              !presignedUrlFetcher.data
-            }
-          >
-            Submit
-          </Button>
-        </uploadFetcher.Form>
-      </DialogContent>
-    </Dialog>
-  );
-});
 
 const ImageCard = React.forwardRef<
   HTMLDivElement,
@@ -287,7 +239,7 @@ const ImageCard = React.forwardRef<
       {...props}
     >
       <GripHorizontal
-        className="size-4 touch-none"
+        className="size-4 cursor-pointer touch-none"
         {...listeners}
         {...attributes}
       />

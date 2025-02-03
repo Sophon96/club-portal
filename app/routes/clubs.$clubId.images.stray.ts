@@ -11,6 +11,7 @@ import { z } from "zod";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import { prisma } from "~/db.server";
 import { isValidObjectId } from "~/lib/utils";
+import { getGalleryImageNetSize } from "~/lib/utils.server";
 import { s3Client } from "~/s3.server";
 
 /* This is a resource route for modifying images in the edit page */
@@ -79,8 +80,9 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   }
 
   // Let's make sure the image does exist in S3
+  let s3Resp;
   try {
-    await s3Client.send(
+    s3Resp = await s3Client.send(
       new HeadObjectCommand({
         Bucket: process.env.S3_BUCKET,
         Key: parsedForm.data.key,
@@ -97,14 +99,31 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     throw err;
   }
 
+  if (typeof s3Resp.ContentLength === "undefined") {
+    console.error("HeadObjectCommand returned `undefined` for ContentLength");
+    throw new Response(null, { status: 500 });
+  }
+
+  const currentIndex = await prisma.galleryImage.count({
+    where: { club: { id: params.clubId } },
+  });
+
   const newImage = await prisma.galleryImage.create({
     data: {
       club: { connect: { id: params.clubId } },
       name: parsedForm.data.name,
       alt: parsedForm.data.alt,
+      index: currentIndex,
+      size: s3Resp.ContentLength,
     },
     select: { id: true },
   });
+
+  const galleryImageSize = await getGalleryImageNetSize({ id: params.clubId });
+  if (galleryImageSize > BigInt(process.env.GALLERY_IMAGE_QUOTA!)) {
+    await prisma.galleryImage.delete({ where: newImage });
+    throw new Response(null, { status: 413, statusText: "Content Too Large" });
+  }
 
   // time to move the object
   // except s3 doesn't have a moveobject command, so we copy and then delete it

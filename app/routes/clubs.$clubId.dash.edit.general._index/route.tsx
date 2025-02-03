@@ -22,7 +22,7 @@ import { isValidObjectId } from "~/lib/utils";
 import { notReady } from "~/lib/utils.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  return [{ title: `Editing ${data?.club.name} | DSHS Clubs` }];
+  return [{ title: `General | Editing ${data?.club.name} | DSHS Clubs` }];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

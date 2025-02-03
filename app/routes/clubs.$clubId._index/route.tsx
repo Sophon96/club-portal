@@ -117,7 +117,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         },
       })
       .then((val) =>
-        val && val.memberships.length ? val.memberships[0].id : null
+        val && val.memberships.length ? val.memberships[0].id : null,
       );
   }
 
@@ -157,6 +157,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           },
         },
       },
+      galleryImages: {
+        orderBy: {
+          index: "asc",
+        },
+        select: { clubId: true, id: true },
+      },
     },
   });
 
@@ -189,29 +195,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   // Get gallery images from S3
-  const galleryObjects = await s3Client.send(
-    new ListObjectsV2Command({
-      Bucket: process.env.S3_BUCKET,
-      Prefix: `${club.id}/gallery/`,
-    })
+  const knownGalleryImageKeys = club.galleryImages.map(
+    (doc) => `${doc.clubId}/gallery/${doc.id}`,
   );
 
-  let galleryImageUrls: (string | null)[];
-  if (typeof galleryObjects.Contents === "undefined") {
-    console.error("No contents returned for gallery images");
-    galleryImageUrls = [];
-  } else {
-    galleryImageUrls = await Promise.all(
-      galleryObjects.Contents.map((obj) => {
-        if (obj.Key) {
-          return getPresignedUrl(obj.Key);
-        } else {
-          console.error("No key returned for gallery image");
-          return null;
-        }
-      })
-    );
-  }
+  const galleryObjects = await s3Client
+    .send(
+      new ListObjectsV2Command({
+        Bucket: process.env.S3_BUCKET,
+        Prefix: `${club.id}/gallery/`,
+      }),
+    )
+    .then((thing) => thing.Contents?.map((obj) => obj.Key));
+
+  // keys that are both in MongoDB and S3
+  const validGalleryImageKeys = knownGalleryImageKeys.filter((key) =>
+    galleryObjects?.includes(key),
+  );
+
+  const galleryImageUrls = await Promise.all(
+    validGalleryImageKeys.map((key) => getPresignedUrl(key)),
+  );
 
   return json({
     club: {
@@ -264,7 +268,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         action: "noclue",
         error: "Unrecognized action",
       },
-      400
+      400,
     );
   }
   const _action = actionResult.data;
@@ -320,7 +324,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         action: "noclue",
         error: "Unrecognized action",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -381,7 +385,7 @@ export default function Club() {
     if (actionData) {
       if (actionData.success) {
         toast.success(
-          `Club ${actionData.action === "join" ? "joined" : "left"}!`
+          `Club ${actionData.action === "join" ? "joined" : "left"}!`,
         );
       } else {
         toast.error("Failed to join/leave club", {
@@ -394,7 +398,7 @@ export default function Club() {
   return (
     <>
       {officerOrAdvisor ? <OfficerBanner /> : null}
-      <div className="px-4 lg:px-8 w-full max-w-screen-2xl m-auto flex flex-col lg:flex-row gap-4 lg:gap-8 mt-4 lg:mt-12 ">
+      <div className="m-auto mt-4 flex w-full max-w-screen-2xl flex-col gap-4 px-4 lg:mt-12 lg:flex-row lg:gap-8 lg:px-8">
         <ImageGallery galleryImageUrls={galleryImageUrls} />
         <div className="lg:w-1/2">
           <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
@@ -410,7 +414,7 @@ export default function Club() {
             {club.numMembers + optimisticValue !== 1 ? "s" : ""}
           </Badge>*/}
           <Separator />
-          <p className="leading-relaxed my-4">{club.description}</p>
+          <p className="my-4 leading-relaxed">{club.description}</p>
           <Form method="POST">
             {!user.membershipId ? (
               <Button
@@ -423,7 +427,7 @@ export default function Club() {
                 disabled={submittingForm}
               >
                 {submittingForm ? (
-                  <Loader2 className="size-[1.2em] mr-2 animate-spin" />
+                  <Loader2 className="mr-2 size-[1.2em] animate-spin" />
                 ) : null}
                 Join Club
               </Button>
@@ -438,13 +442,16 @@ export default function Club() {
                 disabled={submittingForm}
               >
                 {submittingForm ? (
-                  <Loader2 className="size-[1.2em] mr-2 animate-spin" />
+                  <Loader2 className="mr-2 size-[1.2em] animate-spin" />
                 ) : null}
                 Leave Club
               </Button>
             )}
           </Form>
-          <Accordion type="multiple" defaultValue={["meetings-accordion","people-accordion"]}>
+          <Accordion
+            type="multiple"
+            defaultValue={["meetings-accordion", "people-accordion"]}
+          >
             <AccordionItem value="meetings-accordion">
               <AccordionTrigger>Meetings</AccordionTrigger>
               <AccordionContent>
@@ -466,7 +473,8 @@ export default function Club() {
                       </CardHeader>
                       <CardContent className="grid gap-2">
                         <div className="flex items-center gap-2">
-                          <MapPin className="size-[1.2em]" /><span className="sr-only">Location: </span>
+                          <MapPin className="size-[1.2em]" />
+                          <span className="sr-only">Location: </span>
                           {meeting.location}
                         </div>
                         <div className="flex items-center gap-2">
@@ -477,7 +485,7 @@ export default function Club() {
                           <div className="flex flex-wrap gap-2">
                             {meeting.schedule.rrules().map((rrule) => (
                               <Badge variant="secondary">
-                                <Calendar className="size-[1.2em] mr-1" />
+                                <Calendar className="mr-1 size-[1.2em]" />
                                 {formatRRule(rrule)}
                               </Badge>
                             ))}
@@ -487,7 +495,7 @@ export default function Club() {
                           <div className="flex flex-wrap gap-2">
                             {meeting.schedule.rdates().map((rdate) => (
                               <Badge variant="secondary">
-                                <CalendarPlus className="size-[1.2em] mr-1" />
+                                <CalendarPlus className="mr-1 size-[1.2em]" />
                                 on {formatDate(rdate)}
                               </Badge>
                             ))}
@@ -500,7 +508,7 @@ export default function Club() {
                                 variant="secondary"
                                 // className="bg-destructive/80 hover:bg-destructive/50"
                               >
-                                <CalendarOff className="text-destructive size-[1.2em] mr-1" />
+                                <CalendarOff className="mr-1 size-[1.2em] text-destructive" />
                                 except for {formatRRule(exrule)}
                               </Badge>
                             ))}
@@ -510,7 +518,7 @@ export default function Club() {
                           <div className="flex flex-wrap gap-2">
                             {meeting.schedule.exdates().map((exdate) => (
                               <Badge variant="secondary">
-                                <CalendarMinus className="text-destructive size-[1.2em] mr-1" />
+                                <CalendarMinus className="mr-1 size-[1.2em] text-destructive" />
                                 except for {formatDate(exdate)}
                               </Badge>
                             ))}
@@ -610,7 +618,7 @@ export default function Club() {
                     <P>
                       {club.advisor.name}
                       <a href={"mailto:" + club.advisor.email}>
-                        <small className="text-sm text-muted-foreground ml-2">
+                        <small className="ml-2 text-sm text-muted-foreground">
                           {club.advisor.email}
                         </small>
                       </a>
@@ -628,7 +636,7 @@ export default function Club() {
                           <span className="font-semibold">{officer.role}:</span>{" "}
                           {officer.student.name}
                           <a href={`mailto:${officer.studentEmail}`}>
-                            <Small className="text-muted-foreground ml-2">
+                            <Small className="ml-2 text-muted-foreground">
                               {officer.studentEmail}
                             </Small>
                           </a>

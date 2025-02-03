@@ -1,6 +1,12 @@
 import { useFetcher } from "@remix-run/react";
 import { ImageOff } from "lucide-react";
-import React, { useMemo, useState, type HTMLAttributes } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  type HTMLAttributes,
+} from "react";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import {
@@ -25,7 +31,7 @@ export function StrayImageEdit({ images }: StrayImageEditProps) {
   return (
     <ul className="flex flex-row flex-wrap justify-center gap-2">
       {images.map((image) => (
-        <li>
+        <li key={image.objKey}>
           <ImageCardWithEditDialog {...image} />
         </li>
       ))}
@@ -41,7 +47,19 @@ const ImageCardWithEditDialog = React.forwardRef<
   }
 >((props, ref) => {
   const fetcher = useFetcher();
-  console.log(props)
+  const [toastId, setToastId] = useState<string | number | null>(null);
+  // console.log(props);
+
+  // FIXME: this useEffect never fires when its supposed to because the
+  // because the component is gone by then (and the toast is never dismissed)
+  useEffect(() => {
+    // console.log("stray image toast update effect fired", "fetcher.state:", fetcher.state, "toastId:", toastId)
+    if (fetcher.state === "idle" && toastId) {
+      // FIXME: add error toasts
+      toast.success("Registered image!", { id: toastId });
+      setToastId(null);
+    }
+  }, [fetcher.state]);
 
   return (
     <Dialog>
@@ -60,6 +78,10 @@ const ImageCardWithEditDialog = React.forwardRef<
           action="../../../images/stray"
           method="POST"
           className="flex flex-col gap-1.5"
+          onSubmit={() => {
+            // FIXME: find a way to dismiss the toast
+            // setToastId(toast.loading("Registering image..."));
+          }}
         >
           <input type="hidden" name="key" value={props.objKey} />
           <Label className="flex flex-col gap-1.5">
