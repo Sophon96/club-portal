@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useNavigation,
 } from "@remix-run/react";
 
 import styles from "./tailwind.css?url";
@@ -21,6 +22,10 @@ import { AuthProvider } from "./components/authprovider";
 import sonnerStyles from "~/components/ui/sonner.css?url";
 import "@fontsource-variable/public-sans";
 import publicSans from "@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url";
+import { toast } from "sonner";
+import { Toaster } from "./components/ui/sonner";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
@@ -85,6 +90,56 @@ function CloudflareAnalytics() {
 export function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
+  const navigation = useNavigation();
+
+  /* Loading indicator */
+  const [loadingTimeout, setLoadingTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const [loadingToast, setLoadingToast] = useState<string | number | null>(
+    null,
+  );
+  useEffect(() => {
+    if (
+      navigation.state !== "idle" &&
+      !navigation.formAction &&
+      !loadingTimeout
+    ) {
+      setLoadingTimeout(
+        setTimeout(
+          () =>
+            setLoadingToast(
+              toast(
+                <div className="flex flex-row items-center justify-center">
+                  {/* animate-[spin_1s_linear_infinite,ping_1s_cubic-bezier(0,0,0.2,1)_infinite,pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] */}
+                  <Loader2 className="mr-1 size-4 animate-spin text-primary" />
+                  {Array.from("Loading...").map((c, i) => (
+                    <span
+                      key={i}
+                      className="motion-safe:animate-bounce"
+                      style={{ animationDelay: `-${1.5 - i * 0.1}s` }}
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>,
+                { duration: Infinity, important: true },
+              ),
+            ),
+          300,
+        ),
+      );
+    } else if (navigation.state === "idle" && loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      setLoadingTimeout(null);
+
+      if (loadingToast) {
+        toast.dismiss(loadingToast);
+        setLoadingToast(null);
+      }
+    }
+  }, [navigation]);
+
   return (
     <html lang="en" className={clsx(theme)}>
       <head>
@@ -96,6 +151,7 @@ export function App() {
       </head>
       <body>
         <Outlet />
+        <Toaster />
         <ScrollRestoration />
         <Scripts />
         <CloudflareAnalytics />

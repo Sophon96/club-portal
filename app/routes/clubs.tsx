@@ -20,55 +20,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Clubs() {
   const { user, student } = useLoaderData<typeof loader>();
-  const navigation = useNavigation();
-
-  /* Loading indicator */
-  const [loadingTimeout, setLoadingTimeout] = useState<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const [loadingToast, setLoadingToast] = useState<string | number | null>(
-    null,
-  );
-  useEffect(() => {
-    if (
-      navigation.state !== "idle" &&
-      !navigation.formAction &&
-      !loadingTimeout
-    ) {
-      setLoadingTimeout(
-        setTimeout(
-          () =>
-            setLoadingToast(
-              toast(
-                <div className="flex flex-row justify-center items-center">
-                  {/* animate-[spin_1s_linear_infinite,ping_1s_cubic-bezier(0,0,0.2,1)_infinite,pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] */}
-                  <Loader2 className="size-4 text-primary mr-1 animate-spin" />
-                  {Array.from("Loading...").map((c, i) => (
-                    <span
-                      key={i}
-                      className="motion-safe:animate-bounce"
-                      style={{ animationDelay: `-${1.5 - i * 0.1}s` }}
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>,
-                { duration: Infinity, important: true },
-              ),
-            ),
-          300,
-        ),
-      );
-    } else if (navigation.state === "idle" && loadingTimeout) {
-      clearTimeout(loadingTimeout);
-      setLoadingTimeout(null);
-
-      if (loadingToast) {
-        toast.dismiss(loadingToast);
-        setLoadingToast(null);
-      }
-    }
-  }, [navigation]);
 
   return (
     <>
@@ -77,7 +28,6 @@ export default function Clubs() {
         {user ? <Onboarding studentExists={!!student} user={user} /> : null}
         <Outlet />
       </div>
-      <Toaster />
       <footer className="bg-muted py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <p>dshs.club | The platform for clubs at Davis Senior High School</p>
