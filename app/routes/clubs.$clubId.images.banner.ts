@@ -14,8 +14,9 @@ import { isValidObjectId } from "~/lib/utils";
 import { getGalleryImageNetSize } from "~/lib/utils.server";
 import { s3Client } from "~/s3.server";
 
-/* This is a resource route for uploading a new image. This route is called when submitting a new image to get a presigned PUT url */
+/* FIXME: Delete (unused) */
 export const action = async ({ params, request }: ActionFunctionArgs) => {
+  throw new Response(null, { status: 410 });
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
   });
@@ -33,7 +34,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const formSchema = z.object({
     size: z.number().int().gt(0),
-    alt: z.string(),
   });
   const parsedForm = formSchema.safeParse(await request.json());
   if (!parsedForm.success) {
@@ -43,30 +43,9 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     });
   }
 
-  // const currentIndex = await prisma.galleryImage.count({
-  //   where: { club: { id: params.clubId } },
-  // });
-
-  const newImage = await prisma.galleryImage.create({
-    data: {
-      club: { connect: { id: params.clubId } },
-      size: parsedForm.data.size,
-      alt: parsedForm.data.alt,
-      index: 0, //currentIndex,
-      status: "PENDING",
-    },
-    select: { id: true },
-  });
-
-  const galleryImageSize = await getGalleryImageNetSize({ id: params.clubId });
-  if (galleryImageSize > BigInt(process.env.GALLERY_IMAGE_QUOTA!)) {
-    await prisma.galleryImage.delete({ where: newImage });
-    throw new Response(null, { status: 413, statusText: "Content Too Large" });
-  }
-
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `${params.clubId}/gallery/${newImage.id}`,
+    Key: `${params.clubId}/newBanner`,
     ContentLength: parsedForm.data.size,
   });
 

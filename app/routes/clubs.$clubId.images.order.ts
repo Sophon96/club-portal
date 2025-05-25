@@ -36,7 +36,9 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   // race condition technically, but it should never happen
   const currentImages = await prisma.club.findUnique({
     where: { id: params.clubId },
-    select: { galleryImages: { select: { id: true } } },
+    select: {
+      galleryImages: { select: { id: true }, where: { status: "APPROVED" } },
+    },
   });
   if (!currentImages) {
     throw new Response(null, { status: 404, statusText: "Not Found" });
@@ -47,14 +49,22 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     .toSorted();
   const newSortedIds = parsedForm.data.ids.toSorted();
   if (currentSortedIds.length !== newSortedIds.length) {
-    throw new Response(null, { status: 400, statusText: "Bad Request" });
+    return {
+      success: false,
+      error: "images do not match with database records",
+    };
+    // throw new Response(null, { status: 400, statusText: "Bad Request" });
   }
 
   const elementsMatch = currentSortedIds.every(
     (value, index) => value === newSortedIds[index],
   );
   if (!elementsMatch) {
-    throw new Response(null, { status: 400, statusText: "Bad Request" });
+    return {
+      success: false,
+      error: "images do not match with database records",
+    };
+    // throw new Response(null, { status: 400, statusText: "Bad Request" });
   }
 
   // if we've made it here, the images match
@@ -69,5 +79,5 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
       },
     },
   });
-  return null;
+  return { success: true, error: null };
 };

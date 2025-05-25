@@ -7,11 +7,11 @@ export default function ClubDashboard() {
     <>
       <Link to="../" relative="path">
         <Button variant="link">
-          <ArrowLeft className="size-4 inline mr-2" />
+          <ArrowLeft className="mr-2 inline size-4" />
           Return to public view
         </Button>
       </Link>
-      <main className="m-2">
+      <main className="mx-4 my-2">
         <Outlet />
       </main>
     </>

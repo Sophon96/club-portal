@@ -40,7 +40,7 @@ authenticator
         if (process.env.DONT_CHECK_DOMAIN !== "true") {
           invariant(
             profile.emails[0].value.endsWith("@djusdstudents.org"),
-            "Student email is not on djusdstudents.org"
+            "Student email is not on djusdstudents.org",
           );
         }
 
@@ -56,9 +56,9 @@ authenticator
           // student,
           email: profile.emails[0].value,
         };
-      }
+      },
     ),
-    "student"
+    "student",
   )
   .use(
     new GoogleStrategy(
@@ -72,7 +72,7 @@ authenticator
         if (process.env.DONT_CHECK_DOMAIN !== "true") {
           invariant(
             profile.emails[0].value.endsWith("@djusd.net"),
-            "Teacher email is not on djusd.net"
+            "Teacher email is not on djusd.net",
           );
         }
 
@@ -86,14 +86,38 @@ authenticator
           // teacher,
           email: profile.emails[0].value,
         };
-      }
+      },
     ),
-    "teacher"
+    "teacher",
+  )
+  .use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.CLIENT_ID!,
+        clientSecret: process.env.CLIENT_SECRET!,
+        callbackURL: process.env.ADMIN_CALLBACK_URL!,
+      },
+      async ({ profile }) => {
+        invariant(
+          process.env
+            .ADMIN_EMAILS!.split(" ")
+            .includes(profile.emails[0].value),
+        );
+
+        return {
+          type: "admin",
+          name: `${profile.name.givenName} ${profile.name.familyName}`,
+          // teacher,
+          email: profile.emails[0].value,
+        };
+      },
+    ),
+    "admin",
   );
 
 export async function checkIsOfficerOrAdvisor(
   user: AuthInfo | null,
-  where: Prisma.ClubWhereUniqueInput
+  where: Prisma.ClubWhereUniqueInput,
 ): Promise<boolean> {
   if (!user) return false;
 

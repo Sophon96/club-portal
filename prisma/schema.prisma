@@ -26,6 +26,11 @@ model Club {
   officers    Officer[]
   members     Member[]
 
+  // will be populated when changes are pending review from admin
+  newName        String  @default("")
+  newDescription String  @default("")
+  pendingChanges Boolean @default(false)
+
   advisorId String @db.ObjectId
   founderId String @db.ObjectId
 }
@@ -35,19 +40,35 @@ model GalleryImage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name String
-  alt  String
+  // FIXME: why am I storing both a name and an alt field?
+  // FIXME: name field is unused for now
+  name String @default("")
+  alt  String @default("")
+  size BigInt
 
-  club   Club   @relation("Club", fields: [clubId], references: [id])
-  clubId String @db.ObjectId
+  club   Club               @relation("Club", fields: [clubId], references: [id])
+  clubId String             @db.ObjectId
+  index  Int
+  status GalleryImageStatus
 }
 
-type Meeting {
+enum GalleryImageStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Meeting {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
   name     String
   location String
   duration Int
 
   schedule RecurrenceRuleSet
+
+  Club   Club   @relation(fields: [clubId], references: [id])
+  clubId String @db.ObjectId
 }
 
 type RecurrenceRuleSet {

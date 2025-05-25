@@ -146,20 +146,6 @@ export default function Club() {
       </div>
       <main className="w-full flex justify-center items-center">
         <div className="flex flex-wrap justify-center items-center gap-4 max-w-7xl m-4">
-          {/* <Card className="w-96 h-60 overflow-hidden">
-          <img
-            className="w-full h-24 object-cover"
-            src="https://images.unsplash.com/photo-1682687221175-fd40bbafe6ca"
-            alt=""
-          />
-          <CardHeader>
-            <CardTitle>Title</CardTitle>
-            <CardDescription>
-              Jinzo faiya faiba waipa taiga taiga t-t-t-t-taiga chape ape kara
-              kina chape ape kara kina myohontuske clap waipa
-            </CardDescription>
-          </CardHeader>
-        </Card> */}
           {clubInfos.map((club) => {
             // only take the last two digits of the ID to prevent precision loss
             const idAsNum = parseInt(club.id.slice(-2), 16);

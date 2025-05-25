@@ -1,6 +1,10 @@
+import { authenticator } from "~/auth.server";
 import { notReady } from "~/lib/utils.server";
 
-export const loader = notReady();
+export const loader = notReady(async ({ request }) => {
+  await authenticator.isAuthenticated(request);
+  return null;
+});
 
 export default function AdminIndex() {
   return (

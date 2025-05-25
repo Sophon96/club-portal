@@ -23,6 +23,7 @@ export default function ImageUpload() {
     () => uploadImage && URL.createObjectURL(uploadImage),
     [uploadImage],
   ); // FIXME: is this useMemo doing anything?
+  const [alt, setAlt] = useState("");
 
   const revalidator = useRevalidator();
 
@@ -32,6 +33,7 @@ export default function ImageUpload() {
     if (uploadImage) {
       const data = {
         size: uploadImage.size,
+        alt,
       };
 
       let resp;
@@ -116,6 +118,13 @@ export default function ImageUpload() {
                 }
               }}
               className="cursor-pointer"
+            />
+          </Label>
+          <Label className="flex flex-col gap-1.5">
+            Alt Text
+            <Input
+              value={alt}
+              onChange={(e) => setAlt(e.currentTarget.value)}
             />
           </Label>
           <DialogClose asChild>

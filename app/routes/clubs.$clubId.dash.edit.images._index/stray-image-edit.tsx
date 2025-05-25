@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
-import { ImageOff } from "lucide-react";
+import { Form, useFetcher } from "@remix-run/react";
+import { ImageOff, Trash2 } from "lucide-react";
 import React, {
   useEffect,
   useMemo,
@@ -19,6 +19,8 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { action as registerStrayAction } from "../clubs.$clubId.images.stray";
+import { action as deleteStrayAction } from "../clubs.$clubId.images.stray.delete";
 
 interface StrayImageEditProps {
   images: {
@@ -29,9 +31,9 @@ interface StrayImageEditProps {
 
 export function StrayImageEdit({ images }: StrayImageEditProps) {
   return (
-    <ul className="flex flex-row flex-wrap justify-center gap-2">
+    <ul className="justify-left flex flex-row flex-wrap gap-2">
       {images.map((image) => (
-        <li key={image.objKey}>
+        <li className="relative" key={image.objKey}>
           <ImageCardWithEditDialog {...image} />
         </li>
       ))}
@@ -46,63 +48,143 @@ const ImageCardWithEditDialog = React.forwardRef<
     url: string;
   }
 >((props, ref) => {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<typeof registerStrayAction>();
   const [toastId, setToastId] = useState<string | number | null>(null);
   // console.log(props);
 
-  // FIXME: this useEffect never fires when its supposed to because the
-  // because the component is gone by then (and the toast is never dismissed)
+  // kinda cursed, but the returned function is the "cleanup" that runs before
+  // rerender but also (importantly) before unmount. Checking for fetcher.data
+  // is probably unnecessary, as is having fetcher.state in the dependency
+  // array. It works.
   useEffect(() => {
-    // console.log("stray image toast update effect fired", "fetcher.state:", fetcher.state, "toastId:", toastId)
-    if (fetcher.state === "idle" && toastId) {
-      // FIXME: add error toasts
-      toast.success("Registered image!", { id: toastId });
-      setToastId(null);
-    }
+    return () => {
+      if (fetcher.data && toastId) {
+        if (fetcher.data.success) {
+          toast.success("Registered image!", { id: toastId });
+        } else {
+          console.error(
+            "Failed to register stray image (error message:",
+            fetcher.data.errorMessage,
+            "):",
+            fetcher.data.error,
+          );
+          toast.error(
+            "Failed to register image. Error: " + fetcher.data.errorMessage,
+          );
+        }
+        setToastId(null);
+      }
+    };
   }, [fetcher.state]);
 
   return (
-    <Dialog>
-      <DialogTrigger className="size-full">
-        <ImageCard url={props.url} />
-      </DialogTrigger>
-      <DialogContent className="max-h-full overflow-auto">
-        <DialogHeader>
-          <DialogTitle>Register Image</DialogTitle>
-          <DialogDescription>
-            Add information about the image and register it. Click submit when
-            done.
-          </DialogDescription>
-        </DialogHeader>
-        <fetcher.Form
-          action="../../../images/stray"
-          method="POST"
-          className="flex flex-col gap-1.5"
-          onSubmit={() => {
-            // FIXME: find a way to dismiss the toast
-            // setToastId(toast.loading("Registering image..."));
-          }}
-        >
-          <input type="hidden" name="key" value={props.objKey} />
-          <Label className="flex flex-col gap-1.5">
-            Name
-            <Input name="name" />
-          </Label>
-          <Label className="flex flex-col gap-1.5">
-            Alt
-            <Input name="alt" />
-          </Label>
-          <Button type="submit">Submit</Button>
-        </fetcher.Form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog>
+        <DialogTrigger className="size-full">
+          <Card className="flex aspect-[4/3] w-24 items-center justify-center overflow-hidden bg-muted lg:w-48">
+            {props.url ? (
+              <img
+                src={props.url}
+                className="size-full object-contain"
+                draggable={false}
+              />
+            ) : (
+              <p>No image</p>
+            )}
+          </Card>
+        </DialogTrigger>
+        <DialogContent className="max-h-full overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Register Image</DialogTitle>
+            <DialogDescription>
+              Add information about the image and register it. Click submit when
+              done.
+            </DialogDescription>
+          </DialogHeader>
+          <fetcher.Form
+            action="../../../images/stray"
+            method="POST"
+            className="flex flex-col gap-1.5"
+            onSubmit={() => {
+              // FIXME: find a way to dismiss the toast
+              // figured it out, we have a useEffect that runs on unmount
+              setToastId(toast.loading("Registering image..."));
+            }}
+          >
+            <input type="hidden" name="key" value={props.objKey} />
+            {/* FIXME: unused for now */}
+            {/* <Label className="flex flex-col gap-1.5">
+              Name
+              <Input name="name" />
+            </Label> */}
+            <Label className="flex flex-col gap-1.5">
+              Alt
+              <Input name="alt" />
+            </Label>
+            <Button type="submit">Submit</Button>
+          </fetcher.Form>
+        </DialogContent>
+      </Dialog>
+      <DeleteImageForm objKey={props.objKey} />
+    </>
   );
 });
+
+const DeleteImageForm = (props: { objKey: string }) => {
+  const fetcher = useFetcher<typeof deleteStrayAction>();
+  const [toastId, setToastId] = useState<string | number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (fetcher.data && toastId) {
+        if (fetcher.data.success) {
+          toast.success("Deleted image!", { id: toastId });
+        } else {
+          console.error(
+            "Failed to delete stray image (error message:",
+            fetcher.data.errorMessage,
+            "):",
+            fetcher.data.error,
+          );
+          toast.error(
+            "Failed to delete stray image. Error: " + fetcher.data.errorMessage,
+          );
+        }
+        setToastId(null);
+      }
+    };
+  }, [fetcher.state]);
+
+  return (
+    <>
+      <fetcher.Form
+        method="POST"
+        action="../../../images/stray/delete"
+        onSubmit={() => {
+          setToastId(toast.loading("Deleting image..."));
+        }}
+      >
+        <Button
+          type="submit"
+          name="key"
+          value={props.objKey}
+          variant="destructive"
+          size="icon"
+          className="absolute right-2 top-2 h-8 w-8 rounded-full"
+        >
+          <Trash2 className="size-4" />
+          <span className="sr-only">Delete image</span>
+        </Button>
+      </fetcher.Form>
+    </>
+  );
+};
 
 const ImageCard = React.forwardRef<
   HTMLDivElement,
   HTMLAttributes<HTMLDivElement> & {
     url: string;
+    objKey: string;
   }
 >((props, ref) => {
   return (
@@ -122,6 +204,19 @@ const ImageCard = React.forwardRef<
         ) : (
           <p>No image</p>
         )}
+        <Form method="POST" action="../../images/stray/delete">
+          <Button
+            type="submit"
+            name="key"
+            value={props.objKey}
+            variant="destructive"
+            size="icon"
+            className="absolute right-2 top-2 h-8 w-8 rounded-full"
+          >
+            <Trash2 className="size-4" />
+            <span className="sr-only">Delete image</span>
+          </Button>
+        </Form>
       </Card>
     </div>
   );

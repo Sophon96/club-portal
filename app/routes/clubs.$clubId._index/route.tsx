@@ -158,11 +158,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         },
       },
       galleryImages: {
+        where: {
+          status: "APPROVED",
+        },
         orderBy: {
           index: "asc",
         },
         select: { clubId: true, id: true },
       },
+      meetings: true,
     },
   });
 
