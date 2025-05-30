@@ -15,7 +15,7 @@ import {
   MetaFunction,
   redirect,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useRevalidator } from "@remix-run/react";
 import { ImageOff } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -129,15 +129,11 @@ export const action = async ({
     throw new Response(null, { status: 404 });
   }
 
-  if (club.pendingChanges) {
-    return { success: false, error: "there are already changes under review" };
-  }
-
   const formData = await request.formData();
   const schema = z.object({
     name: z.string(),
     description: z.string(),
-    size: z.number().int().gt(0),
+    size: z.coerce.number().int().gt(0),
   });
   const parsedForm = schema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -148,16 +144,15 @@ export const action = async ({
   await prisma.club.update({
     where: { id: params.clubId },
     data: {
-      newName: parsedForm.data.name,
-      newDescription: parsedForm.data.description,
-      pendingChanges: true,
+      name: parsedForm.data.name,
+      description: parsedForm.data.description,
     },
   });
 
   /* Get presigned URL for uploading image */
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `${params.clubId}/newBanner`,
+    Key: `${params.clubId}/banner.webp`,
     ContentLength: parsedForm.data.size,
   });
 
@@ -180,10 +175,12 @@ export default function ClubEditIndex() {
     () => uploadImage && URL.createObjectURL(uploadImage),
     [uploadImage],
   ); // FIXME: is this useMemo doing anything?
+  const previewImageSrc = uploadImageSrc || club.bannerUrl;
   const [nameValue, setNameValue] = useState(club.name);
   const [descriptionValue, setDescriptionValue] = useState(club.description);
   const [submitTriggered, setSubmitTriggered] = useState(false);
   const [toastId, setToastId] = useState<string | number | null>(null);
+  const revalidator = useRevalidator();
 
   useEffect(() => {
     if (!actionData || !submitTriggered || !toastId) {
@@ -213,60 +210,12 @@ export default function ClubEditIndex() {
     }
     setToastId(null);
     setSubmitTriggered(false);
+    revalidator.revalidate()
   }, [actionData]);
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    /* Two step process: upload the new banner image (get presigned url, PUT to it), then let the browser submit everything else */
-    if (uploadImage) {
-      const toastId = toast.loading("Uploading banner image...");
-      const data = {
-        size: uploadImage.size,
-      };
-
-      let resp;
-      try {
-        resp = await fetch("../../images/banner", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
-      } catch (error) {
-        console.error("fetch to get presigned PUT url failed");
-        console.error(error);
-        toast.error("An error was encountered while uploading the image.", {
-          id: toastId,
-        });
-        return;
-      }
-
-      const respJson = await resp.json();
-      const parsedResp = z.string().url().safeParse(respJson);
-      if (parsedResp.success) {
-        try {
-          await fetch(parsedResp.data, {
-            method: "PUT",
-            body: uploadImage,
-          });
-          toast.success("Image successfully uploaded!", { id: toastId });
-        } catch (error) {
-          console.error("fetch to presigned PUT url failed");
-          console.error(error);
-          toast.error("An error was encountered while uploading the image.", {
-            id: toastId,
-          });
-        }
-      } else {
-        console.error("failed to parse returned presigned PUT url");
-        console.error(parsedResp.error.issues);
-        toast.error("An error was encountered while uploading the image.", {
-          id: toastId,
-        });
-      }
-    }
-  };
 
   return (
     <>
-      <div className="flex flex-col gap-4 md:flex-row">
+      <div className="flex flex-col-reverse gap-4 md:flex-row">
         {/* <div className="min-h-full"> */}
         {/* <div className=""> */}
         <Form
@@ -277,20 +226,7 @@ export default function ClubEditIndex() {
           }}
           className="flex-1"
         >
-          <fieldset disabled={club.pendingChanges}>
-            {uploadImageSrc ? (
-              <img
-                src={uploadImageSrc}
-                className="aspect-[4/3] max-h-96 max-w-96 rounded bg-muted object-contain"
-              />
-            ) : (
-              <Card className="flex aspect-square max-h-96 max-w-96 flex-col items-center justify-center text-muted-foreground">
-                {/* <CardContent className="flex h-full w-full flex-col items-center justify-center p-0 text-muted-foreground"> */}
-                <ImageOff className="w-1/3" />
-                No Image
-                {/* </CardContent> */}
-              </Card>
-            )}
+          <fieldset>
             <Label htmlFor="banner">Image</Label>
             <Input
               id="banner"
@@ -304,12 +240,19 @@ export default function ClubEditIndex() {
                     toast.error(
                       "Sorry, your image is too big. The max size is 4 MiB.",
                     );
+                    event.target.value = "";
                     return;
                   }
                   setUploadImage(event.target.files[0]);
                 }
               }}
               className="cursor-pointer"
+            />
+            <input
+              type="hidden"
+              id="size"
+              name="size"
+              value={(uploadImage?.size || 0).toString()}
             />
             <Label htmlFor="name">Name</Label>
             <Input
@@ -337,7 +280,7 @@ export default function ClubEditIndex() {
           id={club.id}
           name={nameValue}
           description={descriptionValue}
-          bannerUrl={uploadImageSrc || club.bannerUrl}
+          bannerUrl={previewImageSrc}
         />
       </div>
     </>

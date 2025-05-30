@@ -26,10 +26,10 @@ model Club {
   officers    Officer[]
   members     Member[]
 
-  // will be populated when changes are pending review from admin
+  /* // will be populated when changes are pending review from admin
   newName        String  @default("")
   newDescription String  @default("")
-  pendingChanges Boolean @default(false)
+  pendingChanges Boolean @default(false) */
 
   advisorId String @db.ObjectId
   founderId String @db.ObjectId
