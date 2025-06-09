@@ -23,6 +23,7 @@ export default function ImageUpload() {
     () => uploadImage && URL.createObjectURL(uploadImage),
     [uploadImage],
   ); // FIXME: is this useMemo doing anything?
+  const [name, setName] = useState("");
   const [alt, setAlt] = useState("");
 
   const revalidator = useRevalidator();
@@ -33,6 +34,7 @@ export default function ImageUpload() {
     if (uploadImage) {
       const data = {
         size: uploadImage.size,
+        name,
         alt,
       };
 
@@ -52,25 +54,50 @@ export default function ImageUpload() {
       }
 
       const respJson = await resp.json();
-      const parsedResp = z.string().url().safeParse(respJson);
-      if (parsedResp.success) {
-        try {
-          await fetch(parsedResp.data, {
-            method: "PUT",
-            body: uploadImage,
-          });
-          toast.success("Image successfully uploaded!", { id: toastId });
-          revalidator.revalidate();
-        } catch (error) {
-          console.error("fetch to presigned PUT url failed");
-          console.error(error);
-          toast.error("An error was encountered while uploading the image.", {
-            id: toastId,
-          });
-        }
-      } else {
+      const respSchema = z
+        .object({
+          success: z.literal(true),
+          url: z.string(),
+        })
+        .or(
+          z.object({
+            success: z.literal(false),
+            error: z.any(),
+            errorMessage: z.string(),
+          }),
+        );
+      const parsedResp = respSchema.safeParse(respJson);
+      if (!parsedResp.success) {
         console.error("failed to parse returned presigned PUT url");
         console.error(parsedResp.error.issues);
+        toast.error("An error was encountered while uploading the image.", {
+          id: toastId,
+        });
+        return;
+      }
+
+      if (!parsedResp.data.success) {
+        console.error(
+          "something failed while fetching presigned PUT url",
+          parsedResp.data.error,
+        );
+        toast.error(
+          `An error was encountered while uploading the image: ${parsedResp.data.errorMessage}`,
+          { id: toastId },
+        );
+        return;
+      }
+
+      try {
+        await fetch(parsedResp.data.url, {
+          method: "PUT",
+          body: uploadImage,
+        });
+        toast.success("Image successfully uploaded!", { id: toastId });
+        revalidator.revalidate();
+      } catch (error) {
+        console.error("fetch to presigned PUT url failed");
+        console.error(error);
         toast.error("An error was encountered while uploading the image.", {
           id: toastId,
         });
@@ -118,6 +145,13 @@ export default function ImageUpload() {
                 }
               }}
               className="cursor-pointer"
+            />
+          </Label>
+          <Label className="flex flex-col gap-1.5">
+            Name
+            <Input
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
             />
           </Label>
           <Label className="flex flex-col gap-1.5">

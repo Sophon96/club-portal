@@ -85,7 +85,58 @@ export async function getGalleryImageNetSize(
     netSize += doc.size;
   });
 
-  console.log("gallery image net size (club: %s):", club.id, netSize)
+  console.log("gallery image net size (club: %s):", club.id, netSize);
 
   return netSize;
+}
+
+export async function isValidStrayKey(
+  clubId: string,
+  key: string,
+): Promise<boolean> {
+  const keyPattern = `^${clubId}/gallery/([a-zA-Z0-9_-]+)$`;
+  const keyMatch = key.match(keyPattern);
+  if (!keyMatch) {
+    return false;
+  }
+  const keyImageName = keyMatch[1];
+  if (
+    await prisma.galleryImage.findUnique({
+      where: { name: keyImageName },
+      select: { id: true },
+    })
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export async function tryCreateGalleryImage(
+  clubId: string,
+  name: string,
+  alt: string,
+  size: number,
+) {
+  try {
+    return await prisma.galleryImage.create({
+      data: {
+        club: { connect: { id: clubId } },
+        name,
+        alt,
+        size,
+        index: 0,
+      },
+      select: { id: true, name: true },
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code == "P2002"
+    ) {
+      return null;
+    } else {
+      throw err;
+    }
+  }
 }

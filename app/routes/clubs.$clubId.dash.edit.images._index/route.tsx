@@ -10,8 +10,6 @@ import ImageUpload from "./image-upload";
 import { isValidObjectId } from "~/lib/utils";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import { notReady } from "~/lib/utils.server";
-import { PendingImages } from "./pending-images";
-import { RejectedImages } from "./rejected-images";
 import {
   Card,
   CardContent,
@@ -88,14 +86,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const knownGalleryImageRecords = club.galleryImages;
 
   const knownGalleryImageKeys = knownGalleryImageRecords.map(
-    (rec) => `${rec.clubId}/gallery/${rec.id}`,
+    (rec) => `${rec.clubId}/gallery/${rec.name}`,
   );
 
-  const knownGalleryImageIds = knownGalleryImageRecords.map((rec) => rec.id);
-  console.log(knownGalleryImageIds);
+  const knownGalleryImageIds = knownGalleryImageRecords.map(
+    (rec) => rec.id,
+  );
+  console.debug(knownGalleryImageIds);
 
-  console.log("known keys", knownGalleryImageKeys);
-  console.log("s3 keys", galleryImageKeys);
+  console.debug("known keys", knownGalleryImageKeys);
+  console.debug("s3 keys", galleryImageKeys);
 
   // FIXME: This is O(N*M), but apparently ECMA didn't think to include set
   // operations in the original spec for Sets (ES6)
@@ -105,58 +105,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // If an image recorded in Mongo doesn't actually exist in s3, don't try to
   // get a presigned url for it
-  let approvedGalleryImages: {
-    [key: string]: { name: string; alt: string; url: string | null };
-  } = {};
-  let pendingGalleryImages: {
-    [key: string]: { name: string; alt: string; url: string | null };
-  } = {};
-  let rejectedGalleryImages: {
+  let galleryImages: {
     [key: string]: { name: string; alt: string; url: string | null };
   } = {};
   for (const rec of knownGalleryImageRecords) {
-    const key = `${rec.clubId}/gallery/${rec.id}`;
+    const key = `${rec.clubId}/gallery/${rec.name}`;
     const presignedUrl = galleryImageKeys.includes(key)
       ? await getPresignedUrl(key)
       : null;
-    switch (rec.status) {
-      case "PENDING":
-        pendingGalleryImages[rec.id] = {
-          name: rec.name,
-          alt: rec.alt,
-          url: presignedUrl,
-        };
-        break;
-      case "APPROVED":
-        approvedGalleryImages[rec.id] = {
-          name: rec.name,
-          alt: rec.alt,
-          url: presignedUrl,
-        };
-        break;
-      case "REJECTED":
-        rejectedGalleryImages[rec.id] = {
-          name: rec.name,
-          alt: rec.alt,
-          url: presignedUrl,
-        };
-        break;
-    }
+    galleryImages[rec.id] = {
+      name: rec.name,
+      alt: rec.alt,
+      url: presignedUrl,
+    };
   }
 
-  const approvedGalleryImageIds = knownGalleryImageIds.filter((value) =>
-    Object.keys(approvedGalleryImages).includes(value),
+  const galleryImageIds = knownGalleryImageIds.filter((value) =>
+    Object.keys(galleryImages).includes(value),
   );
-  const pendingGalleryImageIds = knownGalleryImageIds.filter((value) =>
-    Object.keys(pendingGalleryImages).includes(value),
-  );
-  const rejectedGalleryImageIds = knownGalleryImageIds.filter((value) =>
-    Object.keys(rejectedGalleryImages).includes(value),
-  );
-
-  // const galleryImageUrls = await Promise.all(
-  //   galleryImageKeys.map((obj) => getPresignedUrl(obj)),
-  // );
 
   const strayGalleryImages = await Promise.all(
     strayGalleryImageKeys.map(async (objKey) => {
@@ -165,43 +131,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   return {
-    approvedGalleryImages,
-    pendingGalleryImages,
-    rejectedGalleryImages,
-    approvedGalleryImageIds,
-    pendingGalleryImageIds,
-    rejectedGalleryImageIds,
+    galleryImages,
+    galleryImageIds,
     strayGalleryImages,
     name: club.name,
   };
 }
 
 export default function ClubDashboardEditImages() {
-  const {
-    approvedGalleryImages,
-    pendingGalleryImages,
-    rejectedGalleryImages,
-    approvedGalleryImageIds,
-    pendingGalleryImageIds,
-    rejectedGalleryImageIds,
-    strayGalleryImages,
-  } = useLoaderData<typeof loader>();
+  const { galleryImages, galleryImageIds, strayGalleryImages } =
+    useLoaderData<typeof loader>();
 
   return (
     <>
       <h2 className="mb-1 text-2xl font-bold tracking-tight">Edit Images</h2>
       <Muted>Upload, modify, or delete images. Click submit when done.</Muted>
       <ImageUpload />
-      {/* <h3 className="mb-2 mt-4 text-xl font-semibold tracking-tighter">
-        Gallery Images
-      </h3>
-      <Muted>
-        Click an image to edit its metadata. Drag the dots to reorder images.
-      </Muted>
-      <ImageEdit
-        imageIds={approvedGalleryImageIds}
-        images={approvedGalleryImages}
-      /> */}
       <div className="my-4 space-y-4">
         <Card className="border-none bg-muted">
           <CardHeader>
@@ -217,34 +162,7 @@ export default function ClubDashboardEditImages() {
             images */}
             {/* Or don't because we can just hack around it in the component.
             This way I don't need to mess with the other functionality. */}
-            <ImageEdit
-              imageIds={approvedGalleryImageIds}
-              images={approvedGalleryImages}
-              // key={approvedGalleryImageIds.join()}
-            />
-          </CardContent>
-        </Card>
-        <Card className="border-none bg-muted">
-          <CardHeader>
-            <CardTitle>Pending Images</CardTitle>
-            <CardDescription>
-              These images are under review by admin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PendingImages images={pendingGalleryImages} />
-          </CardContent>
-        </Card>
-        <Card className="border-none bg-muted">
-          <CardHeader>
-            <CardTitle>Rejected Images</CardTitle>
-            <CardDescription>
-              These images were rejected by admin. Delete these images to free
-              up space.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RejectedImages images={rejectedGalleryImages} />
+            <ImageEdit imageIds={galleryImageIds} images={galleryImages} />
           </CardContent>
         </Card>
         {strayGalleryImages.length > 0 && (
@@ -261,24 +179,6 @@ export default function ClubDashboardEditImages() {
             </CardContent>
           </Card>
         )}
-        {/* <h3 className="mb-2 mt-4 text-xl font-semibold tracking-tighter">
-          Pending Images
-        </h3>
-        <Muted>These images are under review by admin.</Muted>
-        <PendingImages images={pendingGalleryImages} />
-        <h3 className="mb-2 mt-4 text-xl font-semibold tracking-tighter">
-          Rejected Images
-        </h3>
-        <Muted>Images rejected by admin. Delete images to free up space.</Muted>
-        <RejectedImages images={rejectedGalleryImages} />
-        {strayGalleryImages.length > 0 ? (
-          <>
-            <h3 className="mb-2 mt-4 text-xl font-semibold tracking-tighter">
-              Stray Images
-            </h3>
-            <StrayImageEdit images={strayGalleryImages} />
-          </>
-        ) : null} */}
       </div>
     </>
   );

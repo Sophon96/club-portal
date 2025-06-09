@@ -5,13 +5,14 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import { prisma } from "~/db.server";
 import { isValidObjectId } from "~/lib/utils";
-import { getGalleryImageNetSize } from "~/lib/utils.server";
+import { getGalleryImageNetSize, isValidStrayKey, tryCreateGalleryImage } from "~/lib/utils.server";
 import { s3Client } from "~/s3.server";
 
 /* This is a resource route for modifying images in the edit page */
@@ -33,42 +34,27 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const formSchema = z.object({
     key: z.string(),
-    // name: z.string(),
+    name: z.string().regex(/^[a-zA-Z0-9_-]+$/),
     alt: z.string(),
   });
   const parsedForm = formSchema.safeParse(
     Object.fromEntries(await request.formData()),
   );
   if (!parsedForm.success) {
-    throw {
+    return json({
       success: false,
       error: parsedForm.error.issues,
       errorMessage: "invalid data",
-    };
+    });
   }
 
-  const expectedPrefix = `${params.clubId}/gallery/`;
-  if (!parsedForm.data.key.startsWith(expectedPrefix)) {
-    throw {
+  const validKey = await isValidStrayKey(params.clubId, parsedForm.data.key);
+  if (!validKey) {
+    return json({
       success: false,
       error: parsedForm.data.key,
-      errorMessage: "invalid key",
-    };
-  }
-  const keyImageId = parsedForm.data.key.substring(expectedPrefix.length);
-  if (
-    isValidObjectId(keyImageId) &&
-    (await prisma.galleryImage.findUnique({ where: { id: keyImageId } }))
-  ) {
-    throw {
-      success: false,
-      error: keyImageId,
-      errorMessage: "image already exists in db",
-    };
-    /* new Response("image exists in db", {
-      status: 422,
-      statusText: "Unprocessable Entity",
-    }); */
+      errorMessage: "invalid key or key in database",
+    });
   }
 
   // Let's make sure the image does exist in S3
@@ -82,18 +68,18 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     );
   } catch (err) {
     if (err instanceof Error && err.name === "NoSuchKey") {
-      throw {
+      return json({
         success: false,
         error: parsedForm.data.key,
         errorMessage: "image not found",
-      };
+      });
     }
     console.error("Error heading object to check if it exists:", err);
-    throw {
+    return json({
       success: false,
       error: err,
       errorMessage: "unknown S3 error",
-    };
+    });
   }
 
   if (typeof s3Resp.ContentLength === "undefined") {
@@ -105,26 +91,29 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   //   where: { club: { id: params.clubId } },
   // });
 
-  const newImage = await prisma.galleryImage.create({
-    data: {
-      club: { connect: { id: params.clubId } },
-      // name: parsedForm.data.name,
-      alt: parsedForm.data.alt,
-      index: 0, //currentIndex,
-      size: s3Resp.ContentLength,
-      status: "PENDING",
-    },
-    select: { id: true },
-  });
+  type ImageWithIdName = Prisma.GalleryImageGetPayload<{
+    select: { id: true; name: true };
+  }>;
 
+  const newImage = await tryCreateGalleryImage(params.clubId, parsedForm.data.name, parsedForm.data.alt, s3Resp.ContentLength)
+  if (!newImage) {
+    return {
+      success: false,
+      error: parsedForm.data.name,
+      errorMessage: "Name must be unique"
+    }
+  }
+
+  // FIXME: I don't think it's possible to exceed the max image size...
+  // (I probably copied this logic from the upload handler)
   const galleryImageSize = await getGalleryImageNetSize({ id: params.clubId });
   if (galleryImageSize > BigInt(process.env.GALLERY_IMAGE_QUOTA!)) {
     await prisma.galleryImage.delete({ where: newImage });
-    throw {
+    return json({
       success: false,
       error: null,
       errorMessage: "Image too big",
-    };
+    });
     // new Response(null, { status: 413, statusText: "Content Too Large" });
   }
 
@@ -135,7 +124,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
       new CopyObjectCommand({
         Bucket: process.env.S3_BUCKET,
         CopySource: `${process.env.S3_BUCKET}/${parsedForm.data.key}`,
-        Key: `${params.clubId}/gallery/${newImage.id}`,
+        Key: `${params.clubId}/gallery/${newImage.name}`,
       }),
     );
     await s3Client.send(

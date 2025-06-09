@@ -11,7 +11,7 @@ import { z } from "zod";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import { prisma } from "~/db.server";
 import { isValidObjectId } from "~/lib/utils";
-import { getGalleryImageNetSize } from "~/lib/utils.server";
+import { getGalleryImageNetSize, isValidStrayKey } from "~/lib/utils.server";
 import { s3Client } from "~/s3.server";
 
 /* This is a resource route for modifying images in the edit page */
@@ -38,35 +38,20 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     Object.fromEntries(await request.formData()),
   );
   if (!parsedForm.success) {
-    throw {
+    return json({
       success: false,
       error: parsedForm.error.issues,
       errorMessage: "invalid data",
-    };
+    });
   }
 
-  const expectedPrefix = `${params.clubId}/gallery/`;
-  if (!parsedForm.data.key.startsWith(expectedPrefix)) {
-    throw {
+  const validKey = await isValidStrayKey(params.clubId, parsedForm.data.key);
+  if (!validKey) {
+    return json({
       success: false,
       error: parsedForm.data.key,
-      errorMessage: "invalid key",
-    };
-  }
-  const keyImageId = parsedForm.data.key.substring(expectedPrefix.length);
-  if (
-    isValidObjectId(keyImageId) &&
-    (await prisma.galleryImage.findUnique({ where: { id: keyImageId } }))
-  ) {
-    throw {
-      success: false,
-      error: keyImageId,
-      errorMessage: "image exists in db",
-    };
-    /* new Response("image exists in db", {
-        status: 422,
-        statusText: "Unprocessable Entity",
-      }); */
+      errorMessage: "invalid key or key in database"
+    })
   }
 
   try {
@@ -78,18 +63,18 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     );
   } catch (err) {
     if (err instanceof Error && err.name === "NoSuchKey") {
-      throw {
+      return json({
         success: false,
         error: parsedForm.data.key,
         errorMessage: "image not found",
-      };
+      });
     }
     console.error("Error deleting object:", err);
-    throw {
+    return json({
       success: false,
       error: err,
       errorMessage: "unknown S3 error",
-    };
+    });
   }
 
   return { success: true, error: null, errorMessage: null };

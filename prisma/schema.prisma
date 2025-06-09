@@ -40,22 +40,13 @@ model GalleryImage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // FIXME: why am I storing both a name and an alt field?
-  // FIXME: name field is unused for now
-  name String @default("")
+  name String @unique
   alt  String @default("")
   size BigInt
 
   club   Club               @relation("Club", fields: [clubId], references: [id])
   clubId String             @db.ObjectId
   index  Int
-  status GalleryImageStatus
-}
-
-enum GalleryImageStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
 
 model Meeting {

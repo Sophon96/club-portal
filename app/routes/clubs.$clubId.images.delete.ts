@@ -39,14 +39,42 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     Object.fromEntries(await request.formData()),
   );
   if (!parsedForm.success) {
-    throw {
+    return {
       success: false,
       error: parsedForm.error.issues,
       errorMessage: "invalid data",
     };
   }
 
-  const key = `${params.clubId}/gallery/${parsedForm.data.id}`;
+  type ImageWithName = Prisma.GalleryImageGetPayload<{
+    select: { name: true };
+  }>;
+
+  let rec: ImageWithName | null = null;
+
+  try {
+    rec = await prisma.galleryImage.delete({
+      where: { clubId: params.clubId, id: parsedForm.data.id },
+      select: { name: true },
+    });
+  } catch (err) {
+    // if the problem is that we can't find it, we just return that
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2025"
+    ) {
+      return {
+        success: false,
+        error: err,
+        errorMessage: "image not found",
+      };
+    } else {
+      // otherwise, it's not our problem.
+      throw err;
+    }
+  }
+
+  const key = `${params.clubId}/gallery/${rec.name}`;
   try {
     await s3Client.send(
       new DeleteObjectCommand({
@@ -66,32 +94,11 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
       // };
     }
     console.error("Error deleting object:", err);
-    throw {
+    return {
       success: false,
       error: err,
       errorMessage: "unknown S3 error",
     };
-  }
-
-  try {
-    const rec = await prisma.galleryImage.delete({
-      where: { id: parsedForm.data.id },
-    });
-  } catch (err) {
-    // if the problem is that we can't find it, we just return that
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2025"
-    ) {
-      throw {
-        success: false,
-        error: err,
-        errorMessage: "image not found",
-      };
-    } else {
-      // otherwise, it's not our problem.
-      throw err;
-    }
   }
 
   return { success: true, error: null, errorMessage: null };

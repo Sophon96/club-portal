@@ -7,6 +7,7 @@ import { prisma } from "~/db.server";
 import { isValidObjectId } from "~/lib/utils";
 import { getPresignedUrl, s3Client } from "~/s3.server";
 
+// FIXME: currently unused
 /* This is a resource route for modifying images in the edit page */
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const user = await authenticator.isAuthenticated(request, {
@@ -30,15 +31,15 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   }
 
   // Make sure the image actually belongs to the club
-  const imageClubId = await prisma.galleryImage.findUnique({
+  const image = await prisma.galleryImage.findUnique({
     where: { id: params.imageId },
-    select: { clubId: true },
+    select: { clubId: true, name: true },
   });
-  if (!imageClubId) {
+  if (!image) {
     // the image with id=imageId doesn't exist
     throw new Response(null, { status: 404, statusText: "Not Found" });
   }
-  if (imageClubId.clubId !== params.clubId) {
+  if (image.clubId !== params.clubId) {
     throw new Response(null, { status: 403, statusText: "Forbidden" });
   }
 
@@ -54,7 +55,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `${params.clubId}/gallery/${params.imageId}`,
+    Key: `${params.clubId}/gallery/${image.name}`,
     ContentLength: parsedData.data.size
   });
 

@@ -10,39 +10,30 @@ import {
 import { H1 } from "~/components/ui/typography";
 
 export function ImageGallery({
-  galleryImageUrls,
+  galleryImages,
 }: {
-  galleryImageUrls: (string | null)[];
+  galleryImages: { alt: string; url: string }[];
 }) {
   return (
     <>
-      {galleryImageUrls.length ? (
-        <Carousel className="lg:w-1/2 h-fit overflow-hidden">
+      {galleryImages.length ? (
+        <Carousel className="h-fit lg:w-1/2">
           <CarouselContent>
-            {galleryImageUrls.map((url, idx) => (
+            {galleryImages.map((img, idx) => (
               <CarouselItem key={idx} className="aspect-[4/3]">
-                {url ? (
-                  <Card className="size-full bg-muted flex flex-col justify-center border-none">
-                    <img src={url} className="object-contain" />
-                  </Card>
-                ) : (
-                  <Card className="w-full">
-                    <CardContent className="flex flex-col items-center justify-center h-full">
-                      <ImageOff className="w-16 h-16 block" />
-                      <H1>Image failed to load</H1>
-                    </CardContent>
-                  </Card>
-                )}
+                <Card className="flex size-full flex-col justify-center overflow-hidden border-none bg-muted">
+                  <img src={img.url} alt={img.alt} className="object-contain" />
+                </Card>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-4 transition-opacity disabled:opacity-0 opacity-50 hover:opacity-100" />
-          <CarouselNext className="right-4 transition-opacity disabled:opacity-0 opacity-50 hover:opacity-100" />
+          <CarouselPrevious className="left-4 opacity-50 transition-opacity hover:opacity-100 disabled:opacity-0" />
+          <CarouselNext className="right-4 opacity-50 transition-opacity hover:opacity-100 disabled:opacity-0" />
         </Carousel>
       ) : (
-        <Card className="lg:w-1/2 rounded-2xl hidden lg:block h-fit">
-          <CardContent className="flex flex-col items-center justify-center aspect-[4/3] h-full text-muted-foreground">
-            <ImageOff className="w-16 h-16 block" />
+        <Card className="hidden h-fit rounded-2xl lg:block lg:w-1/2">
+          <CardContent className="flex aspect-[4/3] h-full flex-col items-center justify-center text-muted-foreground">
+            <ImageOff className="block h-16 w-16" />
             <H1>No images</H1>
           </CardContent>
         </Card>

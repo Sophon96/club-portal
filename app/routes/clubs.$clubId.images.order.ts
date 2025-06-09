@@ -37,7 +37,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const currentImages = await prisma.club.findUnique({
     where: { id: params.clubId },
     select: {
-      galleryImages: { select: { id: true }, where: { status: "APPROVED" } },
+      galleryImages: { select: { id: true } },
     },
   });
   if (!currentImages) {

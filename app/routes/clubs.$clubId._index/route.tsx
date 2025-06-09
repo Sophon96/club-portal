@@ -65,11 +65,14 @@ import { Badge } from "~/components/ui/badge";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const preloadGalleryTags = data
-    ? data.galleryImageUrls
-        .filter((url) => typeof url === "string")
-        .map((url) => {
-          return { tagName: "link", rel: "preload", href: url, as: "image" };
-        })
+    ? data.club.galleryImages.map((img) => {
+        return {
+          tagName: "link",
+          rel: "preload",
+          href: img.url,
+          as: "image",
+        };
+      })
     : [];
 
   return [
@@ -158,13 +161,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         },
       },
       galleryImages: {
-        where: {
-          status: "APPROVED",
-        },
         orderBy: {
           index: "asc",
         },
-        select: { clubId: true, id: true },
+        select: { clubId: true, id: true, name: true, alt: true },
       },
       meetings: true,
     },
@@ -199,10 +199,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   // Get gallery images from S3
-  const knownGalleryImageKeys = club.galleryImages.map(
-    (doc) => `${doc.clubId}/gallery/${doc.id}`,
-  );
-
   const galleryObjects = await s3Client
     .send(
       new ListObjectsV2Command({
@@ -213,12 +209,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .then((thing) => thing.Contents?.map((obj) => obj.Key));
 
   // keys that are both in MongoDB and S3
-  const validGalleryImageKeys = knownGalleryImageKeys.filter((key) =>
-    galleryObjects?.includes(key),
-  );
-
-  const galleryImageUrls = await Promise.all(
-    validGalleryImageKeys.map((key) => getPresignedUrl(key)),
+  const validGalleryImages = await Promise.all(
+    club.galleryImages
+      .filter((doc) =>
+        galleryObjects?.includes(`${doc.clubId}/gallery/${doc.name}`),
+      )
+      .map(async (doc) => ({
+        ...doc,
+        url: await getPresignedUrl(`${doc.clubId}/gallery/${doc.name}`),
+      })),
   );
 
   return json({
@@ -227,10 +226,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       meetings: meetingsWithStringDates,
       numMembers,
       ...overwriteOfficers,
+      galleryImages: validGalleryImages,
     },
     user: { ...user, membershipId },
     officerOrAdvisor,
-    galleryImageUrls,
   });
 }
 
@@ -336,8 +335,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function Club() {
   const params = useParams();
   const clubId = params.clubId;
-  const { club, user, officerOrAdvisor, galleryImageUrls } =
-    useLoaderData<typeof loader>();
+  const { club, user, officerOrAdvisor } = useLoaderData<typeof loader>();
   const meetings = club.meetings.map((mtg) => {
     // Remember when we turned the dates into strings in the loader?
     // Time to turn them back into Date objects.
@@ -403,7 +401,7 @@ export default function Club() {
     <>
       {officerOrAdvisor ? <OfficerBanner /> : null}
       <div className="m-auto mt-4 flex w-full max-w-screen-2xl flex-col gap-4 px-4 lg:mt-12 lg:flex-row lg:gap-8 lg:px-8">
-        <ImageGallery galleryImageUrls={galleryImageUrls} />
+        <ImageGallery galleryImages={club.galleryImages} />
         <div className="lg:w-1/2">
           <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
             {club.name}

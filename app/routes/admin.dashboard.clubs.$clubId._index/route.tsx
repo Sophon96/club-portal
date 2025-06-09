@@ -60,7 +60,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     .then((val) => val.map((rec) => ({ ...rec, size: rec.size.toString() })));
   const galleryImageUrls = Promise.all(
     galleryImagesRecs.map(async (rec) => {
-      const key = `/${params.clubId}/gallery/${rec.id}`;
+      const key = `/${params.clubId}/gallery/${rec.name}`;
       const url = await getPresignedUrl(key);
       return url;
     }),

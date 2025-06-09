@@ -112,11 +112,10 @@ const ImageCardWithEditDialog = React.forwardRef<
             }}
           >
             <input type="hidden" name="key" value={props.objKey} />
-            {/* FIXME: unused for now */}
-            {/* <Label className="flex flex-col gap-1.5">
+            <Label className="flex flex-col gap-1.5">
               Name
               <Input name="name" />
-            </Label> */}
+            </Label>
             <Label className="flex flex-col gap-1.5">
               Alt
               <Input name="alt" />

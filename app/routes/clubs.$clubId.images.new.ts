@@ -11,7 +11,10 @@ import { z } from "zod";
 import { authenticator, checkIsOfficerOrAdvisor } from "~/auth.server";
 import { prisma } from "~/db.server";
 import { isValidObjectId } from "~/lib/utils";
-import { getGalleryImageNetSize } from "~/lib/utils.server";
+import {
+  getGalleryImageNetSize,
+  tryCreateGalleryImage,
+} from "~/lib/utils.server";
 import { s3Client } from "~/s3.server";
 
 /* This is a resource route for uploading a new image. This route is called when submitting a new image to get a presigned PUT url */
@@ -33,30 +36,31 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const formSchema = z.object({
     size: z.number().int().gt(0),
+    name: z.string().regex(/^[a-zA-Z0-9_-]+$/),
     alt: z.string(),
   });
   const parsedForm = formSchema.safeParse(await request.json());
   if (!parsedForm.success) {
-    throw json(parsedForm.error.issues, {
-      status: 400,
-      statusText: "Bad Request",
-    });
+    return {
+      success: false,
+      error: parsedForm.error.issues,
+      errorMessage: "invalid data",
+    };
   }
 
-  // const currentIndex = await prisma.galleryImage.count({
-  //   where: { club: { id: params.clubId } },
-  // });
-
-  const newImage = await prisma.galleryImage.create({
-    data: {
-      club: { connect: { id: params.clubId } },
-      size: parsedForm.data.size,
-      alt: parsedForm.data.alt,
-      index: 0, //currentIndex,
-      status: "PENDING",
-    },
-    select: { id: true },
-  });
+  const newImage = await tryCreateGalleryImage(
+    params.clubId,
+    parsedForm.data.name,
+    parsedForm.data.alt,
+    parsedForm.data.size,
+  );
+  if (!newImage) {
+    return {
+      success: false,
+      error: parsedForm.data.name,
+      errorMessage: "name must be unique",
+    };
+  }
 
   const galleryImageSize = await getGalleryImageNetSize({ id: params.clubId });
   if (galleryImageSize > BigInt(process.env.GALLERY_IMAGE_QUOTA!)) {
@@ -66,7 +70,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `${params.clubId}/gallery/${newImage.id}`,
+    Key: `${params.clubId}/gallery/${newImage.name}`,
     ContentLength: parsedForm.data.size,
   });
 
@@ -74,7 +78,10 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     const signedUrl = await getSignedUrl(s3Client, command, {
       expiresIn: 600,
     });
-    return signedUrl;
+    return {
+      success: true,
+      url: signedUrl,
+    };
   } catch (err) {
     console.error("Error generating presigned URL", err);
     throw err;

@@ -232,7 +232,7 @@ const ImageCard = React.forwardRef<
     attributes?: DraggableAttributes;
     listeners?: SyntheticListenerMap;
   }
->(({ listeners, attributes, ...props }, ref) => {
+>(({ listeners, attributes, img, imgId, ...props }, ref) => {
   const fetcher = useFetcher<typeof deleteImageAction>();
   const [toastId, setToastId] = useState<string | number | null>(null);
 
@@ -250,6 +250,7 @@ const ImageCard = React.forwardRef<
           );
           toast.error(
             "Failed to delete image. Error: " + fetcher.data.errorMessage,
+            { id: toastId },
           );
         }
         setToastId(null);
@@ -269,9 +270,9 @@ const ImageCard = React.forwardRef<
         {...attributes}
       />
       <Card className="relative flex aspect-[4/3] w-24 items-center justify-center overflow-hidden bg-muted lg:w-48">
-        {props.img ? (
+        {img ? (
           <img
-            src={props.img}
+            src={img}
             className="size-full object-contain"
             draggable={false}
           />
@@ -286,7 +287,7 @@ const ImageCard = React.forwardRef<
           <Button
             type="submit"
             name="id"
-            value={props.imgId}
+            value={imgId}
             variant="destructive"
             size="icon"
             className="absolute right-2 top-2 h-8 w-8 rounded-full"
